@@ -65,8 +65,8 @@ function Login({ onLogin }: { onLogin: (username: string, role: string) => void 
     <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-950">
       <form onSubmit={submit} className="w-96 rounded-2xl bg-white dark:bg-gray-900 p-8 shadow-lg flex flex-col gap-4">
         <div className="text-center mb-2">
-          <Star size={52} className="mx-auto mb-3 dark:text-blue-400" style={{ color: "#2f5da8" }} fill="currentColor" strokeLinejoin="round" />
-          <h2 className="text-4xl font-bold tracking-wide text-[#2f5da8] dark:text-blue-400">STAR</h2>
+          <Star size={52} className="mx-auto mb-3 dark:text-brand-400" style={{ color: "#e82a78" }} fill="currentColor" strokeLinejoin="round" />
+          <h2 className="text-4xl font-bold tracking-wide text-[#e82a78] dark:text-brand-400">STAR</h2>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-2 whitespace-nowrap">Storage Tracking &amp; Audit Reporting</p>
         </div>
         {error && <div className="rounded-md bg-red-50 dark:bg-red-900/30 p-3 text-sm text-red-800 dark:text-red-300">{error}</div>}
@@ -77,7 +77,7 @@ function Login({ onLogin }: { onLogin: (username: string, role: string) => void 
             {showPassword ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
           </button>
         </div>
-        <button type="submit" disabled={loading} className="rounded-2xl bg-blue-600 text-white py-2.5 font-semibold hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed">
+        <button type="submit" disabled={loading} className="rounded-2xl bg-brand-600 text-white py-2.5 font-semibold hover:bg-brand-700 dark:bg-brand-500 dark:hover:bg-brand-600 disabled:opacity-50 disabled:cursor-not-allowed">
           {loading ? "Signing in..." : "Sign In"}
         </button>
       </form>
@@ -89,7 +89,7 @@ function Login({ onLogin }: { onLogin: (username: string, role: string) => void 
 // UI Primitives
 // =============================
 const Button: React.FC<React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: "default" | "outline" | "ghost"; size?: "sm" | "default" }> = ({ className = "", variant = "default", size = "default", ...props }) => (
-  <button className={`inline-flex items-center gap-2 rounded-2xl px-4 py-2 text-sm font-medium shadow-sm transition active:scale-[.98] ${variant === "default" ? "bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600" : "border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800"} ${variant === "ghost" ? "border-0 hover:bg-gray-100 dark:hover:bg-gray-800" : ""} ${size === "sm" ? "px-3 py-1.5 text-xs" : ""} ${className}`} {...props} />
+  <button className={`inline-flex items-center gap-2 rounded-2xl px-4 py-2 text-sm font-medium shadow-sm transition active:scale-[.98] ${variant === "default" ? "bg-brand-600 text-white hover:bg-brand-700 dark:bg-brand-500 dark:hover:bg-brand-600" : "border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800"} ${variant === "ghost" ? "border-0 hover:bg-gray-100 dark:hover:bg-gray-800" : ""} ${size === "sm" ? "px-3 py-1.5 text-xs" : ""} ${className}`} {...props} />
 );
 
 const Card: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({ className = "", ...props }) => (<div className={`rounded-2xl border border-gray-200 bg-white p-0 shadow-sm dark:border-gray-800 dark:bg-gray-900 ${className}`} {...props} />);
@@ -125,7 +125,7 @@ const rootTotal = (rows: any[], root: string) =>
 // Built for Outlook on Windows (Word engine): no flexbox, no grid, no
 // border-radius, no max-width, and unreliable percentage widths - so this is
 // fixed-pixel tables + inline styles + bgcolor attributes throughout.
-const ACCENT = "#2f5da8", ACCENT2 = "#4f46e5";
+const ACCENT = "#e82a78", ACCENT2 = "#9d114a";
 const W = 780, COL = 380, BAR = 344;
 
 function escHtml(s: any) {
@@ -152,7 +152,7 @@ function barHtml(pct: number, color: string, width?: number) {
 function gaugeCell(label: string, used: number, total: number, color: string) {
   const pct = total > 0 ? (used / total) * 100 : 0;
   return `<td width="${COL}" valign="top" style="width:${COL}px;padding:0 5px;">
-    <table cellpadding="0" cellspacing="0" border="0" role="presentation" width="${COL - 10}" style="width:${COL - 10}px;border:1px solid #d7e0f2;border-collapse:collapse;page-break-inside:avoid;">
+    <table cellpadding="0" cellspacing="0" border="0" role="presentation" width="${COL - 10}" style="width:${COL - 10}px;border:1px solid #f9c3d9;border-collapse:collapse;page-break-inside:avoid;">
       <tr><td style="padding:14px;${FONT}">
         <table cellpadding="0" cellspacing="0" border="0" role="presentation" width="${BAR}" style="width:${BAR}px;"><tr>
           <td style="${FONT}font-size:13px;line-height:16px;font-weight:bold;color:#5b6472;">${escHtml(String(label).toUpperCase())}</td>
@@ -395,7 +395,7 @@ const RichSummary: React.FC<{ text: string }> = ({ text }) => {
     if (numbered) {
       out.push(
         <div key={i} className="flex gap-2 pl-2">
-          <span className="shrink-0 text-xs font-semibold text-blue-600 dark:text-blue-400">{numbered[1]}.</span>
+          <span className="shrink-0 text-xs font-semibold text-brand-600 dark:text-brand-400">{numbered[1]}.</span>
           <span className="text-sm text-gray-700 dark:text-gray-300">{inlineBold(numbered[2], `n${i}`)}</span>
         </div>
       );
@@ -421,7 +421,7 @@ const RichSummary: React.FC<{ text: string }> = ({ text }) => {
       const nested = inGroup || bullet[1] === "+";
       out.push(
         <div key={i} className={`flex gap-2 ${nested ? "pl-6" : "pl-1"}`}>
-          <span className="shrink-0 text-blue-600 dark:text-blue-400">{nested ? "\u203A" : "\u2022"}</span>
+          <span className="shrink-0 text-brand-600 dark:text-brand-400">{nested ? "\u203A" : "\u2022"}</span>
           <span className="text-sm text-gray-700 dark:text-gray-300">{inlineBold(content, `b${i}`)}</span>
         </div>
       );
@@ -973,9 +973,9 @@ const onChangeUsageDell = async (val: string) => {
       const left = buildSide("Post Prod HR Storage IBM", usageIbm, capIbm, ibmBuckets, ibmRows);
       const right = buildSide("Post Prod HR Storage Dell Compellent", usageDell, capDell, dellBuckets, dellRows);
 
-      const css = `body { font-family: Arial, sans-serif; font-size: 12px; } .page { width: 100%; } .column { vertical-align: top; width: 50%; } .gap { height: 10px; } .webcard { border-collapse: collapse; width: 100%; background: #2f5da8; color: #fff; } .webcard td { padding: 6px 8px; } .webtitle { font-weight: 700; font-size: 12px; } .webusage-label { font-weight: 700; font-size: 12px; text-align: center; } .webusage-value { background: #ffffff; color: #1f4294; text-align: center; padding: 2px 6px; font-weight: 600; } .webusage-pct { font-weight: 700; font-size: 12px; text-align: center; } .card { border-collapse: collapse; width: 100%; border: 1px solid #c7d2e9; border-radius: 12px; } .bucket-hdr { background: #2f5da8; color: #fff; font-weight: 700; text-align: left; padding: 6px 8px; } .head th { background: #e8f0fe; color: #1f4294; font-weight: 700; } th, td { border: 1px solid #e1e8f8; padding: 6px 8px; } .row { background: #ffffff; } .row-alt { background: #f6f9ff; } .total td { background: #e8f0fe; color: #1f4294; font-weight: 700; } .nowrap { white-space: nowrap; } .th-center, .cell-center { text-align: center; } .nodata { text-align: center; font-style: italic; color: #6b7280; }`;
+      const css = `body { font-family: Arial, sans-serif; font-size: 12px; } .page { width: 100%; } .column { vertical-align: top; width: 50%; } .gap { height: 10px; } .webcard { border-collapse: collapse; width: 100%; background: #e82a78; color: #fff; } .webcard td { padding: 6px 8px; } .webtitle { font-weight: 700; font-size: 12px; } .webusage-label { font-weight: 700; font-size: 12px; text-align: center; } .webusage-value { background: #ffffff; color: #9d114a; text-align: center; padding: 2px 6px; font-weight: 600; } .webusage-pct { font-weight: 700; font-size: 12px; text-align: center; } .card { border-collapse: collapse; width: 100%; border: 1px solid #f9c3d9; border-radius: 12px; } .bucket-hdr { background: #e82a78; color: #fff; font-weight: 700; text-align: left; padding: 6px 8px; } .head th { background: #fef1f6; color: #9d114a; font-weight: 700; } th, td { border: 1px solid #fce3ed; padding: 6px 8px; } .row { background: #ffffff; } .row-alt { background: #fef1f6; } .total td { background: #fef1f6; color: #9d114a; font-weight: 700; } .nowrap { white-space: nowrap; } .th-center, .cell-center { text-align: center; } .nodata { text-align: center; font-style: italic; color: #6b7280; }`;
 
-      const html = `<!DOCTYPE html><html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="UTF-8" /><style>${css}</style><title>STAR - Storage Tracking &amp; Audit Reporting</title></head><body><table class="page"><tr><td colspan="2"><div style="font-weight:700; font-size:16px; color:#1f4294;">STAR - Storage Tracking &amp; Audit Reporting</div></td></tr><tr><td class="column">${left}</td><td class="column">${right}</td></tr></table></body></html>`;
+      const html = `<!DOCTYPE html><html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="UTF-8" /><style>${css}</style><title>STAR - Storage Tracking &amp; Audit Reporting</title></head><body><table class="page"><tr><td colspan="2"><div style="font-weight:700; font-size:16px; color:#9d114a;">STAR - Storage Tracking &amp; Audit Reporting</div></td></tr><tr><td class="column">${left}</td><td class="column">${right}</td></tr></table></body></html>`;
 
       const blob = new Blob([html], { type: "application/vnd.ms-excel;charset=utf-8" });
       const url = URL.createObjectURL(blob);
@@ -1070,7 +1070,7 @@ const onChangeUsageDell = async (val: string) => {
           <header className="sticky top-0 z-10 border-b border-gray-200 bg-white/80 backdrop-blur dark:border-gray-800 dark:bg-gray-900/80">
             <div className="mx-auto flex max-w-screen-2xl items-center justify-between px-4 py-3">
               <div className="flex items-center gap-3">
-                <h1 className="text-2xl font-bold tracking-wide dark:text-blue-400" style={{ color: "#2f5da8" }}>STAR</h1>
+                <h1 className="text-2xl font-bold tracking-wide dark:text-brand-400" style={{ color: "#e82a78" }}>STAR</h1>
                 {/* Divider + tagline hide on narrower screens so they never crowd the toolbar buttons */}
                 <span className="hidden xl:inline h-5 w-px bg-gray-300 dark:bg-gray-700" />
                 <span className="hidden xl:inline text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">Storage Tracking &amp; Audit Reporting</span>
@@ -1086,9 +1086,9 @@ const onChangeUsageDell = async (val: string) => {
                 <Button variant="outline" onClick={() => { if (userRole === "admin") clearData(); else notify("Only admins can clear data.", "err"); }}><Trash2 className="h-4 w-4" /> Clear</Button>
                 
                 {/* Theme Buttons */}
-                <Button variant="outline" onClick={() => changeTheme('light')} className={theme === 'light' ? "ring-2 ring-blue-500" : ""}><Sun className="h-4 w-4" /></Button>
-<Button variant="outline" onClick={() => changeTheme('dark')} className={theme === 'dark' ? "ring-2 ring-blue-500" : ""}><Moon className="h-4 w-4" /></Button>
-<Button variant="outline" onClick={() => changeTheme('system')} className={theme === 'system' ? "ring-2 ring-blue-500" : ""}><Laptop className="h-4 w-4" /></Button>
+                <Button variant="outline" onClick={() => changeTheme('light')} className={theme === 'light' ? "ring-2 ring-brand-500" : ""}><Sun className="h-4 w-4" /></Button>
+<Button variant="outline" onClick={() => changeTheme('dark')} className={theme === 'dark' ? "ring-2 ring-brand-500" : ""}><Moon className="h-4 w-4" /></Button>
+<Button variant="outline" onClick={() => changeTheme('system')} className={theme === 'system' ? "ring-2 ring-brand-500" : ""}><Laptop className="h-4 w-4" /></Button>
 
                 <Button onClick={async () => { setAiLoading(true); setAiOutput(null); setShowAI(true); try {
                   const ibmTopLevel = rootChildren(ibmRows, "/Volumes/snibmprod");
@@ -1168,7 +1168,7 @@ RULES:
 {showAI && (
   <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
     <div className="flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-gray-900">
-      <div className="flex items-center justify-between bg-gradient-to-r from-[#2f5da8] to-[#1f4294] px-4 py-2.5">
+      <div className="flex items-center justify-between bg-gradient-to-r from-[#e82a78] to-[#9d114a] px-4 py-2.5">
         <h2 className="flex items-center gap-2 text-sm font-semibold text-white">
           <Sparkles className="h-4 w-4" /> STAR Monthly Report
         </h2>
@@ -1180,19 +1180,19 @@ RULES:
       <div className="flex-1 overflow-y-auto p-5">
         {aiLoading ? (
           <div className="flex flex-col items-center justify-center gap-3 py-16">
-            <Sparkles className="h-8 w-8 animate-pulse text-blue-600" />
+            <Sparkles className="h-8 w-8 animate-pulse text-brand-600" />
             <p className="text-sm text-gray-500 dark:text-gray-400">Generating summary&hellip;</p>
           </div>
         ) : (
           <>
             <div className="grid gap-3 sm:grid-cols-2">
-              <CapacityGauge label="Post Prod HR Storage IBM" used={Number(manualWebIBM) || 0} total={660} bar="bg-blue-600" />
-              <CapacityGauge label="Dell Compellent" used={Number(manualWebDell) || 0} total={616} bar="bg-indigo-500" />
+              <CapacityGauge label="Post Prod HR Storage IBM" used={Number(manualWebIBM) || 0} total={660} bar="bg-brand-600" />
+              <CapacityGauge label="Dell Compellent" used={Number(manualWebDell) || 0} total={616} bar="bg-brand-500" />
             </div>
 
             <div className="mt-5 grid gap-5 sm:grid-cols-2">
-              <TopPaths title="IBM &mdash; Top 5 Paths" rows={ibmRows} bar="bg-blue-600" />
-              <TopPaths title="Dell &mdash; Top 5 Paths" rows={dellRows} bar="bg-indigo-500" />
+              <TopPaths title="IBM &mdash; Top 5 Paths" rows={ibmRows} bar="bg-brand-600" />
+              <TopPaths title="Dell &mdash; Top 5 Paths" rows={dellRows} bar="bg-brand-500" />
             </div>
 
             <div className="mt-6 border-t border-gray-200 pt-4 dark:border-gray-800">
@@ -1250,7 +1250,7 @@ RULES:
           {showSettings && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
               <div className="w-full max-w-4xl rounded-2xl bg-white p-6 shadow-xl dark:bg-gray-900 max-h-[90vh] overflow-hidden flex flex-col">
-                <div className="mb-4 flex items-center justify-between"><div><h2 className="flex items-center gap-2 text-lg font-semibold"><Settings className="h-5 w-5 text-blue-600" />User Management Settings</h2><div className="text-sm text-gray-600 dark:text-gray-400 mt-1">Logged in as: <span className="font-medium text-blue-600 dark:text-blue-400">{currentUser}</span> ({userRole})</div></div><button onClick={() => setShowSettings(false)} className="rounded-md px-2 py-1 text-sm hover:bg-gray-100 dark:hover:bg-gray-800">✕</button></div>
+                <div className="mb-4 flex items-center justify-between"><div><h2 className="flex items-center gap-2 text-lg font-semibold"><Settings className="h-5 w-5 text-brand-600" />User Management Settings</h2><div className="text-sm text-gray-600 dark:text-gray-400 mt-1">Logged in as: <span className="font-medium text-brand-600 dark:text-brand-400">{currentUser}</span> ({userRole})</div></div><button onClick={() => setShowSettings(false)} className="rounded-md px-2 py-1 text-sm hover:bg-gray-100 dark:hover:bg-gray-800">✕</button></div>
                 <div className="flex-1 overflow-y-auto">
                   <div className="space-y-6">
                     <div className="rounded-lg border border-gray-200 p-4 dark:border-gray-700">
@@ -1416,12 +1416,12 @@ function PanelWithBuckets({ title, rows, buckets, manualUsage, setManualUsage, u
   const pct = Number.isFinite(manualNum) && manualNum > 0 ? (manualNum / cap) * 100 : null;
   return (
     <div className="flex flex-col gap-2">
-      <div className="rounded-2xl px-5 py-3 bg-[#2f5da8] text-white shadow-sm">
+      <div className="rounded-2xl px-5 py-3 bg-[#e82a78] text-white shadow-sm">
         <div className="flex items-center justify-between gap-2 flex-nowrap">
           <div className="text-sm font-semibold whitespace-nowrap">{`${title} (Via Web)`}</div>
           <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
             <span className="text-sm font-semibold tracking-wide">USAGE (TB):</span>
-            <input type="number" step="any" inputMode="decimal" value={manualUsage} onChange={(e) => { if (userRole === "admin") setManualUsage(e.target.value); }} onBlur={(e) => { if (userRole === "admin") setManualUsage(e.target.value); else notify("Only admins can modify usage data.", "err"); }} placeholder="—" className={`w-10 rounded-md px-1 py-0.5 text-center text-sm shadow-sm outline-none ring-0 focus:ring-2 appearance-none ${userRole === "admin" ? "bg-white text-[#1f4294] focus:ring-white/70" : "bg-gray-300 text-gray-500 cursor-not-allowed"}`} disabled={userRole !== "admin"} />
+            <input type="number" step="any" inputMode="decimal" value={manualUsage} onChange={(e) => { if (userRole === "admin") setManualUsage(e.target.value); }} onBlur={(e) => { if (userRole === "admin") setManualUsage(e.target.value); else notify("Only admins can modify usage data.", "err"); }} placeholder="—" className={`w-10 rounded-md px-1 py-0.5 text-center text-sm shadow-sm outline-none ring-0 focus:ring-2 appearance-none ${userRole === "admin" ? "bg-white text-[#9d114a] focus:ring-white/70" : "bg-gray-300 text-gray-500 cursor-not-allowed"}`} disabled={userRole !== "admin"} />
             <span className="text-sm font-semibold tabular-nums whitespace-nowrap">{pct != null ? `${pct.toFixed(1)}%` : "—%"}</span>
           </div>
         </div>
@@ -1441,23 +1441,23 @@ function BucketBox({ label, rows, storageKey, side, sortPrefs, saveSortPreferenc
   const displayRows = useMemo(() => { if (!sortDesc) return rows; const copy = [...rows]; copy.sort((a, b) => (Number(b.size_tb) || 0) - (Number(a.size_tb) || 0)); return copy; }, [rows, sortDesc]);
   
   return (
-    <div className="rounded-xl border border-[#c7d2e9] dark:border-gray-800 overflow-hidden shadow-sm">
-      <div className="flex items-center justify-between bg-[#2f5da8] px-4 py-2 text-[12px] font-semibold uppercase tracking-wide text-white">
+    <div className="rounded-xl border border-[#f9c3d9] dark:border-gray-800 overflow-hidden shadow-sm">
+      <div className="flex items-center justify-between bg-[#e82a78] px-4 py-2 text-[12px] font-semibold uppercase tracking-wide text-white">
         <span>{label}</span>
       </div>
       <table className="w-full table-auto text-sm">
         <thead>
-          <tr className="bg-[#e8f0fe] text-left font-semibold text-xs uppercase tracking-wide text-[#1f4294]">
-            <th className="w-1/2 border-b border-[#c7d2e9] px-4 py-2">Location</th>
-            <th className="w-1/4 border-b border-[#c7d2e9] px-4 py-2">Content</th>
+          <tr className="bg-[#fef1f6] text-left font-semibold text-xs uppercase tracking-wide text-[#9d114a]">
+            <th className="w-1/2 border-b border-[#f9c3d9] px-4 py-2">Location</th>
+            <th className="w-1/4 border-b border-[#f9c3d9] px-4 py-2">Content</th>
             
-            <th className="w-1/4 border-b border-[#c7d2e9] px-4 py-2 relative">
+            <th className="w-1/4 border-b border-[#f9c3d9] px-4 py-2 relative">
   <div className="absolute inset-y-0 right-3 flex flex-row-reverse items-center gap-2">
     <span>Size (TB)</span>
     <button
       type="button"
       onClick={handleSortToggle}
-      className="p-1 text-blue-700 hover:text-blue-900 dark:text-blue-300 dark:hover:text-blue-200"
+      className="p-1 text-brand-700 hover:text-brand-900 dark:text-brand-300 dark:hover:text-brand-200"
     >
       <span className="flex flex-col items-center leading-none">
         <span className={`w-0 h-0 border-l-4 border-r-4 border-l-transparent border-r-transparent border-b-[6px] ${sortDesc ? "opacity-30" : "opacity-100"}`} style={{ borderBottomColor: "currentColor" }} />
@@ -1472,22 +1472,22 @@ function BucketBox({ label, rows, storageKey, side, sortPrefs, saveSortPreferenc
         <tbody>
           {displayRows.length === 0 ? (
             <tr>
-              <td colSpan={3} className="border-b border-[#e1e8f8] px-4 py-2.5 text-center italic text-gray-500 dark:text-gray-400">
+              <td colSpan={3} className="border-b border-[#fce3ed] px-4 py-2.5 text-center italic text-gray-500 dark:text-gray-400">
                 No Data Available.
               </td>
             </tr>
           ) : (
             displayRows.map((r, i) => (
-              <tr key={i} className={i % 2 === 0 ? "bg-white dark:bg-gray-900" : "bg-[#f6f9ff] dark:bg-gray-950"}>
-                <td className="border-b border-[#e1e8f8] px-4 py-2 font-medium text-blue-800 dark:text-blue-300 whitespace-nowrap">{r.location}</td>
-                <td className="border-b border-[#e1e8f8] px-4 py-2">{r.content ?? ""}</td>
-                <td className="border-b border-[#e1e8f8] px-4 py-2 text-right tabular-nums">{formatTB(Number(r.size_tb) || 0)}</td>
+              <tr key={i} className={i % 2 === 0 ? "bg-white dark:bg-gray-900" : "bg-[#fef1f6] dark:bg-gray-950"}>
+                <td className="border-b border-[#fce3ed] px-4 py-2 font-medium text-brand-800 dark:text-brand-300 whitespace-nowrap">{r.location}</td>
+                <td className="border-b border-[#fce3ed] px-4 py-2">{r.content ?? ""}</td>
+                <td className="border-b border-[#fce3ed] px-4 py-2 text-right tabular-nums">{formatTB(Number(r.size_tb) || 0)}</td>
               </tr>
             ))
           )}
         </tbody>
         <tfoot>
-          <tr className="bg-[#e8f0fe] font-semibold text-[#1f4294] text-sm">
+          <tr className="bg-[#fef1f6] font-semibold text-[#9d114a] text-sm">
             <td className="px-4 py-2">TOTAL:</td>
             <td className="px-4 py-2"></td>
             <td className="px-4 py-2 text-right tabular-nums">{formatTB(Number(total) || 0)}</td>
@@ -1569,7 +1569,7 @@ function UserListSection() {
                 <td className="px-4 py-2">
                   <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
                     user.role === 'admin' 
-                      ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' 
+                      ? 'bg-brand-100 text-brand-800 dark:bg-brand-900 dark:text-brand-200' 
                       : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200'
                   }`}>
                     {user.role}
