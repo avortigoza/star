@@ -1,141 +1,117 @@
-# MAMS Storage Audit — Monthly Automation
+# MAMS Storage Audit — Automation
 
-**In plain terms:** your script already runs on your Mac and creates `IBM.csv` and
-`COMP.csv`. Right now, getting that data into the web app requires opening the
-browser and clicking "Import." This adds **two lines to the end of your existing
-script** that send those two files straight to the app the moment they're created —
-no browser, no click. Same script, same schedule as today, just two extra lines.
+**Status: fully automated, all three pieces below run unattended.** No manual
+Import click, no manual Excel export, no manually typing in "Via Web" usage
+numbers before month-end — all of that used to be true and no longer is.
 
-Separately, a second script (`monthly-report.js`) runs on the server hosting the
-web app and, once a month, rebuilds the Excel export + AI summary and emails them to
-you. That part is unrelated to your Mac script — it just reads whatever's already in
-the app's data.
+Three jobs chain together across two machines:
 
-This is a bolt-on: it doesn't modify `server.js`, `App.tsx`, or your CSVs. Your
-manual Import/Export/AI buttons in the browser keep working exactly as before.
+| Time | Runs on | Job | Does |
+|---|---|---|---|
+| Midnight, last day of month | Mac Studio | `audit_storage ver2.sh` | Scans `/Volumes/snibmprod` + `/Volumes/sncomprod`, writes `IBM.csv`/`COMP.csv`, pushes both into the app via `push-to-mams.js` |
+| 8:00 AM, every day | VM | `fetch-usage.js` | SSHes into the Mac Studio, runs `df -k` on both volumes, pushes fresh "Via Web" usage numbers into the app |
+| 10:00 AM, last day of month | VM | `monthly-report.js` | Reads the app's data, builds the Excel export + AI summary, emails both out |
 
-## Part 1 — Mac side: auto-send IBM.csv / COMP.csv after each run
+The 8am daily refresh means the "Via Web" numbers are always current by the
+time the 10am email fires — no more updating them by hand before month-end.
 
-Your script:
+This is a bolt-on: it doesn't modify `server.js`, `App.tsx`, or your CSVs. The
+manual Import/Export/AI buttons in the browser still work exactly as before.
+
+## Part 1 — Mac Studio: scan + auto-push CSVs
+
+Script:
 ```
 /Users/postmams/Documents/scripts/audit_storage/audit_storage ver2.sh
 ```
+This already includes the two `push-to-mams.js` calls at the bottom that send
+`IBM.csv`/`COMP.csv` into the app the moment they're written — no browser, no
+click.
 
-**Step 1.** Copy this whole `mams-automation` folder onto the Mac, right next to
-that script, so you end up with:
-
-```
-/Users/postmams/Documents/scripts/audit_storage/
-├── audit_storage ver2.sh          <- your existing script (I've added 2 lines - see below)
-├── data/                          <- already exists, where IBM.csv/COMP.csv land
-└── mams-automation/                <- copy this folder here
-    ├── scripts/push-to-mams.js
-    └── logs/
-```
-
-**Step 2.** I've already added the two lines to the bottom of
-`audit_storage ver2.sh` in this package (open it and scroll to the bottom, after the
-`Ardome_All_Mats_COMP.csv` line, to see them). Replace your current script with this
-version — or if you'd rather not overwrite it, just copy those last 5 lines
-(starting with `# ---- Added:`) onto the end of your original file yourself.
-
-Those lines run:
-```sh
-node "/Users/postmams/Documents/scripts/audit_storage/mams-automation/scripts/push-to-mams.js" IBM "$loc/IBM.csv"
-node "/Users/postmams/Documents/scripts/audit_storage/mams-automation/scripts/push-to-mams.js" COMP "$loc/COMP.csv"
-```
-
-**Step 3.** `push-to-mams.js` needs to know the web app's address. Set it as an
-environment variable. Two ways:
-- If your script is triggered by `cron` (check with `crontab -l`), add this line by
-  itself when you run `crontab -e`, above the line that runs the script:
-  ```
-  MAMS_API_URL=http://<the-vm's-ip>:5179
-  ```
-- Otherwise, edit the default fallback near the top of `push-to-mams.js` directly.
-
-I don't actually know the VM's IP for certain — confirm it from the Mac with:
-```bash
-curl http://<the-vm's-ip>:5179/api/health
-```
-(should return something like `{"status":"ok",...}`).
-
-**Step 4.** Confirm Node's install path and fix it in the script if needed:
-```bash
-which node
-```
-The script currently assumes `/usr/local/bin/node`. If `which node` shows something
-different (e.g. `/opt/homebrew/bin/node` on Apple Silicon Macs), edit the two `node`
-lines at the bottom of the script to match.
-
-**Step 5.** Create the log folder and test:
-```bash
-mkdir -p "/Users/postmams/Documents/scripts/audit_storage/mams-automation/logs"
-export MAMS_API_URL=http://<the-vm's-ip>:5179
-sh "/Users/postmams/Documents/scripts/audit_storage/audit_storage ver2.sh"
-```
-Then check the web app in the browser — IBM/COMP data should be updated — and look
-at `mams-automation/logs/push.log` for two "Pushed N rows" lines.
-
-`push-to-mams.js` has **no npm dependencies** — it only uses Node's built-ins, so
-there's nothing to install on the Mac.
-
-**Safety note:** if a run produces 0 rows (e.g. a volume was unmounted when it ran),
-`push-to-mams.js` refuses to push and exits with an error, so a bad run can't wipe
-out good data already in the app. If data ever looks stale, check `push.log`.
-
-## Part 2 — Server side: monthly Excel + AI summary email
-
-This is unrelated to the Mac. Put a **second copy** of this `mams-automation`
-folder on the machine hosting the Docker container, next to `docker-compose.yml`:
-
-```
-your-project/
-├── docker-compose.yml
-├── data/
-└── mams-automation/
-```
-
-```bash
-cd mams-automation
-npm init -y
-npm install nodemailer dotenv
-cp .env.example .env
-```
-
-Edit `.env`:
-- `EMAIL_USER` / `EMAIL_PASS` — a Gmail address and a **Gmail App Password** (see
-  comments in `.env.example` for how to generate one — not your normal password).
-- `EMAIL_TO` — who should receive the report.
-- Leave `MAMS_API_URL` / `MAMS_DATA_DIR` as-is if you followed the folder layout above.
-
-### Caveat: "Via Web" usage numbers
-The usage numbers typed into the app's UI aren't in any CSV — they're typed by hand.
-`monthly-report.js` uses whatever's currently saved, so update that in the app
-before month-end, or the report will reflect last month's figure.
-
-### Schedule it
-```bash
-crontab -e
-```
+Scheduled in **`postmams`'s** crontab (not root's) on the Mac Studio:
 ```cron
-0 23 28-31 * * cd /path/to/mams-automation && [ "$(date -d tomorrow +\%d)" = "01" ] && /usr/bin/node scripts/monthly-report.js >> logs/monthly-report.log 2>&1
+0 0 28-31 * * [ "$(date -v+1d +\%d)" = "01" ] && "/Users/postmams/Documents/scripts/audit_storage/mams-automation/audit_storage ver2.sh" >> "/Users/postmams/Documents/scripts/audit_storage/mams-automation/logs/cron_log.txt" 2>&1
 ```
-(cron has no native "last day of month" — this runs daily in the 28–31 range and
-only actually fires when tomorrow is the 1st.) Replace the path, confirm
-`/usr/bin/node` with `which node`, and `mkdir -p logs` first.
+(macOS `date -v+1d` syntax — this is the "run only on the actual last day of
+the month" trick; cron has no native concept of it, so this runs daily across
+28–31 and only fires for real when tomorrow is the 1st.)
 
-### Test it
+Check it ran: `mams-automation/logs/push.log` should show two
+"Pushed N rows" lines after each run.
+
+**Safety note:** if a run produces 0 rows (e.g. a volume was unmounted at
+scan time), `push-to-mams.js` refuses to push and exits with an error, so a
+bad run can't wipe out good data already in the app.
+
+## Part 2 — VM: daily usage refresh via SSH
+
+`fetch-usage.js` no longer talks to the old MSUM web API (that login kept
+failing). It now SSHes directly into the Mac Studio and reads `df -k`:
+
+```
+ssh postmams@10.0.0.164 "df -k /Volumes/snibmprod /Volumes/sncomprod"
+```
+
+Requires **passwordless SSH key auth** from the VM to the Mac Studio:
+- Key: `~/.ssh/mams_studio` (postmams's home on the VM), no passphrase
+  (cron can't type one)
+- `~/.ssh/config` on the VM has a `Host 10.0.0.164` entry pointing at that key
+- Public key installed in the Mac Studio's `~/.ssh/authorized_keys` for
+  `postmams`
+
+Scheduled in **`postmams`'s** crontab on the VM (`vmmams-core`):
+```cron
+0 8 * * * cd /srv/mams-storage-audit/mams-automation/scripts && /usr/bin/node fetch-usage.js >> /tmp/fetch-usage.log 2>&1
+```
+
+Env vars (optional overrides, see top of `fetch-usage.js` for defaults):
+`MAC_STUDIO_HOST`, `MAC_STUDIO_USER`, `IBM_MOUNT`, `COMP_MOUNT`,
+`MAMS_API_URL`.
+
+**Important:** use plain `crontab -e` (as `postmams`), never `sudo crontab -e`.
+The latter edits **root's** crontab, and root has no access to postmams's SSH
+key — the job will fail with `Permission denied (publickey,...)`. If
+`crontab -e` says the user isn't allowed to use `crontab`, `postmams` needs
+adding to `/etc/cron.allow` (`sudo`, then confirm the file is world-readable —
+`chmod 644 /etc/cron.allow` — or cron can't even check who's allowed).
+
+## Part 3 — VM: monthly Excel + AI summary email
+
+Lives at `/srv/mams-storage-audit/mams-automation` on the VM, next to
+`docker-compose.yml`. `.env` there (gitignored) holds:
+- `EMAIL_USER` / `EMAIL_PASS` — Gmail address + **Gmail App Password** (not
+  the normal account password — see `.env.example`)
+- `EMAIL_TO` — comma-separated recipients (`EMAIL_CC`/`EMAIL_BCC` optional)
+- `MAMS_API_URL` / `MAMS_DATA_DIR` — leave as-is if following the standard
+  folder layout
+
+Scheduled in **`postmams`'s** crontab on the VM:
+```cron
+0 10 28-31 * * cd /srv/mams-storage-audit/mams-automation && [ "$(date -d tomorrow +\%d)" = "01" ] && /usr/bin/node scripts/monthly-report.js >> logs/monthly-report.log 2>&1
+```
+(GNU `date -d tomorrow` — different syntax than the Mac Studio job above,
+because this runs on Linux, not macOS.)
+
+### Test it manually anytime
 ```bash
+cd /srv/mams-storage-audit/mams-automation
 node scripts/monthly-report.js
 ```
-Check your inbox.
+Sends immediately using whatever data is currently in the app. Check your
+inbox; on success the terminal prints `Email sent to: ...`.
 
-## What still needs a human
-- Updating the "Via Web" usage numbers before month-end.
-- Confirming macOS cron has permission to read `/Volumes/...` — under System
-  Settings → Privacy & Security → Full Disk Access, add `cron`/`Terminal` if paths
-  come up empty.
+## Troubleshooting notes learned the hard way
+- **`sudo crontab -e` vs `crontab -e`** — always use the latter for these
+  jobs. Sudo edits root's crontab, a completely different, separate file from
+  postmams's.
+- **`/etc/cron.allow` permissions** — if it's `rw-------` (root-only), even a
+  correctly-listed user gets rejected because `crontab` can't read the file
+  to check. Needs to be at least world-readable.
+- **SSH key must have no passphrase** — cron has no terminal to prompt on,
+  so an interactively-tested key with a passphrase will work fine by hand and
+  silently fail under cron.
+- Confirm `which node` on each machine before trusting a hardcoded `node`
+  path in a cron line — it differs between macOS (Homebrew) and the VM.
 
-Everything else — pushing CSV data, Excel export, AI summary, and email — runs
-unattended.
+Everything above — the scan, the push, the daily usage refresh, and the
+monthly export/email — now runs unattended.
