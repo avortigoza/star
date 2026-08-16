@@ -1,0 +1,54 @@
+#!/bin/sh
+
+# audit_storage.sh
+# 
+#
+# Created by MAMS_IMAC on 1/30/19.
+# Copyright 2019 __MyCompanyName__. All rights reserved.
+loc=/Users/postmams/Documents/scripts/audit_storage/data
+mkdir -p $loc
+
+#echo 'Gathered storage quota'
+#echo "DATE,$(date)" > $loc/VIZONE_QUOTA.csv
+#echo 'SHOW,STORAGE,TOTAL,FREE,USED,TOTAL(BYTE),FREE(BYTE)' >> $loc/VIZONE_QUOTA.csv
+#cat /Users/postmams/Documents/scripts/VIZONE_QUOTA/VIZONE_QUOTA.htm | grep "                            data-value" | grep "|hr1|" | sed -e 's/                            data\-value\=//g' | sed -e 's/\"//g' | sed -e 's/\|\|/\,/g' >> $loc/VIZONE_QUOTA.csv
+#cat /Users/postmams/Documents/scripts/VIZONE_QUOTA/VIZONE_QUOTA.htm | grep "                            data-value" | grep "|clone-hr1|" | sed -e 's/                            data\-value\=//g' | sed -e 's/\"//g' | sed -e 's/\|\|/\,/g' >> $loc/VIZONE_QUOTA.csv
+
+echo 'Checking disk storage at snibmprod'
+du -sk /Volumes/snibmprod/* | awk '{print $1","$2}' | tee $loc/IBM.csv
+echo 'Checking disk storage at snibmprod/media'
+du -sk /Volumes/snibmprod/media/* | awk '{print $1","$2}' | tee -a $loc/IBM.csv
+#echo 'Checking disk storage at snibmprod/prod_hr2'
+#du -sk /Volumes/snibmprod/prod_hr2/* | awk '{print $1","$2}' | tee -a $loc/IBM.csv
+echo 'Checking disk storage at snibmprod/prod_hr2'
+du -sk /Volumes/snibmprod/prod_hr2/* | awk '{print $1","$2}' | tee -a $loc/IBM.csv
+echo 'Checking disk storage at snibmprod/media/hr/hr1'
+du -sk /Volumes/snibmprod/media/hr/hr1/* | awk '{print $1","$2}' | tee -a $loc/IBM.csv
+
+
+echo 'Checking disk storage at sncomprod'
+du -sk /Volumes/sncomprod/* | awk '{print $1","$2}' | tee $loc/COMP.csv
+echo 'Checking disk storage at sncomprod/media'
+du -sk /Volumes/sncomprod/media/* | awk '{print $1","$2}' | tee -a $loc/COMP.csv
+echo 'Checking disk storage at sncomprod/prod_hr3'
+du -sk /Volumes/sncomprod/prod_hr3/* | awk '{print $1","$2}' | tee -a $loc/COMP.csv
+echo 'Checking disk storage at sncomprod/media/hr/hr1'
+du -sk /Volumes/sncomprod/media/hr/hr1/* | awk '{print $1","$2}' | tee -a $loc/COMP.csv
+
+
+echo 'Gathering Data at snibmprod/media/hr/hr1'
+ls -lR /Volumes/snibmprod/media/hr/hr1/* | grep -e ".mxf" -e ".mov" | awk '{print $5","$9}' | grep -v 'mxf-op1a' | tee $loc/Vizone_All_Mats_IBM.csv
+echo 'Gathering Data at sncomprod/media/hr/hr1'
+ls -lR /Volumes/sncomprod/media/hr/hr1/* | grep -e ".mxf" -e ".mov" | awk '{print $5","$9}' | grep -v 'mxf-op1a' | tee $loc/Vizone_All_Mats_COMP.csv
+echo 'Gathering Data at /snibmprod/prod_hr2'
+ls -lR /Volumes/snibmprod/prod_hr2 | grep -e .mxf -e .mov -e .wav -e .aiff -e "_" | grep -v prod_hr | awk '{print $9","$5}' | tee $loc/Ardome_All_Mats_IBM.csv
+echo 'Gathering Data at /sncomprod/prod_hr3'
+ls -lR /Volumes/sncomprod/prod_hr3 | grep -e .mxf -e .mov -e .wav -e .aiff -e "_" | grep -v prod_hr | awk '{print $9","$5}' | tee $loc/Ardome_All_Mats_COMP.csv
+
+# ---- Added: push freshly-generated IBM.csv / COMP.csv to the MAMS Storage
+# ---- Audit web app, same effect as clicking Import in the browser.
+automation="/Users/postmams/Documents/scripts/audit_storage/mams-automation"
+echo 'Pushing IBM data to MAMS Storage Audit app'
+/usr/local/bin/node "$automation/scripts/push-to-mams.js" IBM "$loc/IBM.csv" >> "$automation/logs/push.log" 2>&1
+echo 'Pushing COMP data to MAMS Storage Audit app'
+/usr/local/bin/node "$automation/scripts/push-to-mams.js" COMP "$loc/COMP.csv" >> "$automation/logs/push.log" 2>&1

@@ -1,0 +1,6 @@
+{
+  "msum_url": "http://172.30.10.222:8083",
+  "msum_user": "your-username",
+  "msum_pass": "your-password",
+  "mams_api_url": "http://10.0.1.50:8104"
+}

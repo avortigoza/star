@@ -1,0 +1,20 @@
+services:
+  mams-storage-audit:
+    build: .
+    container_name: mams-storage-audit
+    restart: unless-stopped
+    ports:
+      - "5179:5179"
+    volumes:
+      - ./data:/var/www/mams-storage-audit/data
+    environment:
+      - NODE_ENV=production
+      - PORT=5179
+      - OLLAMA_HOST=http://10.0.0.164:11434  # Replace with actual IP
+      - OLLAMA_MODEL=gpt-oss:20b
+    networks:
+      - mams-network
+
+networks:
+  mams-network:
+    driver: bridge
