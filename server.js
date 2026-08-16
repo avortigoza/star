@@ -424,6 +424,130 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+// ============ PUBLIC API v1 (read-only, for other apps) ============
+// Separate from the /api/* routes above, which are the internal API the
+// React frontend uses and can change shape/add write endpoints freely.
+// Everything under /api/v1 is GET-only and considered a stable contract -
+// other apps can build against it without tracking internal app changes.
+const CAP_IBM = 660;
+const CAP_DELL = 616;
+
+app.get('/api/v1', (req, res) => {
+  res.json({
+    name: 'STAR Storage API',
+    version: 'v1',
+    endpoints: {
+      'GET /api/v1/usage': 'IBM/COMP usage summary (TB used, capacity, % full)',
+      'GET /api/v1/rows': 'All storage rows for both IBM and COMP',
+      'GET /api/v1/rows/:side': "Storage rows for one side - 'ibm' or 'comp'",
+      'GET /api/v1/reports': 'List of past monthly Excel reports',
+      'GET /api/v1/reports/:filename/download': 'Download one report file by name',
+    },
+  });
+});
+
+app.get('/api/v1/usage', async (req, res) => {
+  const readJson = async (f, fallback) => {
+    try { return JSON.parse(await fs.readFile(f, 'utf8')); } catch (e) { return fallback; }
+  };
+  try {
+    const usage = await readJson(USAGE_FILE, {});
+    const ibmUsed = Number(usage.ibm) || 0;
+    const compUsed = Number(usage.comp) || 0;
+    res.json({
+      ibm: {
+        usedTB: ibmUsed,
+        capacityTB: CAP_IBM,
+        percentFull: CAP_IBM ? Math.round((ibmUsed / CAP_IBM) * 1000) / 10 : 0,
+        updatedAt: usage.ibmUpdated || null,
+      },
+      comp: {
+        usedTB: compUsed,
+        capacityTB: CAP_DELL,
+        percentFull: CAP_DELL ? Math.round((compUsed / CAP_DELL) * 1000) / 10 : 0,
+        updatedAt: usage.compUpdated || null,
+      },
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not read usage data.' });
+  }
+});
+
+app.get('/api/v1/rows/:side', async (req, res) => {
+  const side = String(req.params.side || '').toUpperCase();
+  if (side !== 'IBM' && side !== 'COMP') {
+    return res.status(400).json({ error: "side must be 'ibm' or 'comp'." });
+  }
+  try {
+    const data = JSON.parse(await fs.readFile(ROWS_FILE, 'utf8'));
+    res.json({ side, rows: data[side] || [], updatedAt: data[`${side}Updated`] || null });
+  } catch (err) {
+    res.json({ side, rows: [], updatedAt: null });
+  }
+});
+
+app.get('/api/v1/rows', async (req, res) => {
+  try {
+    const data = JSON.parse(await fs.readFile(ROWS_FILE, 'utf8'));
+    res.json({
+      ibm: { rows: data.IBM || [], updatedAt: data.IBMUpdated || null },
+      comp: { rows: data.COMP || [], updatedAt: data.COMPUpdated || null },
+    });
+  } catch (err) {
+    res.json({ ibm: { rows: [], updatedAt: null }, comp: { rows: [], updatedAt: null } });
+  }
+});
+
+// Reuses the same strict filename whitelist as the internal reports API -
+// this is still a filesystem read, just under a different route.
+app.get('/api/v1/reports', async (req, res) => {
+  try {
+    let files;
+    try {
+      files = await fs.readdir(REPORTS_DIR);
+    } catch (e) {
+      return res.json([]);
+    }
+    const reports = [];
+    for (const filename of files) {
+      if (!REPORT_FILENAME_RE.test(filename)) continue;
+      const m = filename.match(/(\d{4})-(\d{2})-(\d{2})_(\d{2})(\d{2})/);
+      const stat = await fs.stat(path.join(REPORTS_DIR, filename));
+      reports.push({
+        filename,
+        date: `${m[1]}-${m[2]}-${m[3]}`,
+        time: `${m[4]}:${m[5]}`,
+        sizeBytes: stat.size,
+        generatedAt: stat.mtime.toISOString(),
+        downloadUrl: `/api/v1/reports/${encodeURIComponent(filename)}/download`,
+      });
+    }
+    reports.sort((a, b) => (a.generatedAt < b.generatedAt ? 1 : -1));
+    res.json(reports);
+  } catch (err) {
+    res.status(500).json({ error: 'Could not list report history.' });
+  }
+});
+
+app.get('/api/v1/reports/:filename/download', async (req, res) => {
+  const { filename } = req.params;
+  if (typeof filename !== 'string' || !REPORT_FILENAME_RE.test(filename)) {
+    return res.status(400).json({ error: 'Invalid report filename.' });
+  }
+  const fullPath = path.join(REPORTS_DIR, filename);
+  if (path.resolve(fullPath) !== path.resolve(REPORTS_DIR, filename) || !fullPath.startsWith(path.resolve(REPORTS_DIR))) {
+    return res.status(400).json({ error: 'Invalid report path.' });
+  }
+  try {
+    await fs.access(fullPath);
+  } catch (e) {
+    return res.status(404).json({ error: 'Report not found.' });
+  }
+  res.download(fullPath, filename, (err) => {
+    if (err) console.error('Error sending report file:', err);
+  });
+});
+
 // ============ CATCH-ALL ============
 app.get('*', (req, res) => {
   if (!req.path.startsWith('/api')) {
