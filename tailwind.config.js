@@ -8,22 +8,24 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // Soft, warm pink — deliberately lower saturation and a warmer hue
-        // than a magenta/fuchsia pink, per explicit feedback that magenta
-        // was too much. Keep this palette the single source of truth for
-        // STAR's accent color rather than hardcoding hex values elsewhere.
+        // True hot-pink family (hue ~333, near-full saturation, HIGH lightness) —
+        // not muted/moderate like the previous pass, which read as crimson/red.
+        // "Pink" perceptually needs both high saturation AND high lightness
+        // together; darkening while desaturating is what makes a hue like this
+        // look like brick red instead. Keep this palette the single source of
+        // truth for STAR's accent color rather than hardcoding hex elsewhere.
         brand: {
-          50: '#fcf3f5',
-          100: '#f8e7eb',
-          200: '#f1d0d8',
-          300: '#e7acbb',
-          400: '#db849a',
-          500: '#d1617d',
-          600: '#c84163',
-          700: '#aa314f',
-          800: '#8a2841',
-          900: '#6f2034',
-          950: '#471521',
+          50: '#fff0f7',
+          100: '#ffe0ee',
+          200: '#ffbddb',
+          300: '#ff8fc1',
+          400: '#ff6bae',
+          500: '#ff52a0',
+          600: '#ff338f',
+          700: '#ff0a78',
+          800: '#e00065',
+          900: '#b80053',
+          950: '#8a003f',
         },
       },
     },

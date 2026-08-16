@@ -65,8 +65,8 @@ function Login({ onLogin }: { onLogin: (username: string, role: string) => void 
     <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-950">
       <form onSubmit={submit} className="w-96 rounded-2xl bg-white dark:bg-gray-900 p-8 shadow-lg flex flex-col gap-4">
         <div className="text-center mb-2">
-          <Star size={52} className="mx-auto mb-3 dark:text-brand-400" style={{ color: "#c84163" }} fill="currentColor" strokeLinejoin="round" />
-          <h2 className="text-4xl font-bold tracking-wide text-[#c84163] dark:text-brand-400">STAR</h2>
+          <Star size={52} className="mx-auto mb-3 dark:text-brand-400" style={{ color: "#ff338f" }} fill="currentColor" strokeLinejoin="round" />
+          <h2 className="text-4xl font-bold tracking-wide text-[#ff338f] dark:text-brand-400">STAR</h2>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-2 whitespace-nowrap">Storage Tracking &amp; Audit Reporting</p>
         </div>
         {error && <div className="rounded-md bg-red-50 dark:bg-red-900/30 p-3 text-sm text-red-800 dark:text-red-300">{error}</div>}
@@ -125,7 +125,7 @@ const rootTotal = (rows: any[], root: string) =>
 // Built for Outlook on Windows (Word engine): no flexbox, no grid, no
 // border-radius, no max-width, and unreliable percentage widths - so this is
 // fixed-pixel tables + inline styles + bgcolor attributes throughout.
-const ACCENT = "#c84163", ACCENT2 = "#aa314f";
+const ACCENT = "#ff338f", ACCENT2 = "#e00065";
 const W = 780, COL = 380, BAR = 344;
 
 function escHtml(s: any) {
@@ -152,7 +152,7 @@ function barHtml(pct: number, color: string, width?: number) {
 function gaugeCell(label: string, used: number, total: number, color: string) {
   const pct = total > 0 ? (used / total) * 100 : 0;
   return `<td width="${COL}" valign="top" style="width:${COL}px;padding:0 5px;">
-    <table cellpadding="0" cellspacing="0" border="0" role="presentation" width="${COL - 10}" style="width:${COL - 10}px;border:1px solid #f1d0d8;border-collapse:collapse;page-break-inside:avoid;">
+    <table cellpadding="0" cellspacing="0" border="0" role="presentation" width="${COL - 10}" style="width:${COL - 10}px;border:1px solid #ffbddb;border-collapse:collapse;page-break-inside:avoid;">
       <tr><td style="padding:14px;${FONT}">
         <table cellpadding="0" cellspacing="0" border="0" role="presentation" width="${BAR}" style="width:${BAR}px;"><tr>
           <td style="${FONT}font-size:13px;line-height:16px;font-weight:bold;color:#5b6472;">${escHtml(String(label).toUpperCase())}</td>
@@ -973,9 +973,9 @@ const onChangeUsageDell = async (val: string) => {
       const left = buildSide("Post Prod HR Storage IBM", usageIbm, capIbm, ibmBuckets, ibmRows);
       const right = buildSide("Post Prod HR Storage Dell Compellent", usageDell, capDell, dellBuckets, dellRows);
 
-      const css = `body { font-family: Arial, sans-serif; font-size: 12px; } .page { width: 100%; } .column { vertical-align: top; width: 50%; } .gap { height: 10px; } .webcard { border-collapse: collapse; width: 100%; background: #c84163; color: #fff; } .webcard td { padding: 6px 8px; } .webtitle { font-weight: 700; font-size: 12px; } .webusage-label { font-weight: 700; font-size: 12px; text-align: center; } .webusage-value { background: #ffffff; color: #aa314f; text-align: center; padding: 2px 6px; font-weight: 600; } .webusage-pct { font-weight: 700; font-size: 12px; text-align: center; } .card { border-collapse: collapse; width: 100%; border: 1px solid #f1d0d8; border-radius: 12px; } .bucket-hdr { background: #c84163; color: #fff; font-weight: 700; text-align: left; padding: 6px 8px; } .head th { background: #fcf3f5; color: #8a2841; font-weight: 700; } th, td { border: 1px solid #f8e7eb; padding: 6px 8px; } .row { background: #ffffff; } .row-alt { background: #fcf3f5; } .total td { background: #fcf3f5; color: #8a2841; font-weight: 700; } .nowrap { white-space: nowrap; } .th-center, .cell-center { text-align: center; } .nodata { text-align: center; font-style: italic; color: #6b7280; }`;
+      const css = `body { font-family: Arial, sans-serif; font-size: 12px; } .page { width: 100%; } .column { vertical-align: top; width: 50%; } .gap { height: 10px; } .webcard { border-collapse: collapse; width: 100%; background: #ff338f; color: #fff; } .webcard td { padding: 6px 8px; } .webtitle { font-weight: 700; font-size: 12px; } .webusage-label { font-weight: 700; font-size: 12px; text-align: center; } .webusage-value { background: #ffffff; color: #e00065; text-align: center; padding: 2px 6px; font-weight: 600; } .webusage-pct { font-weight: 700; font-size: 12px; text-align: center; } .card { border-collapse: collapse; width: 100%; border: 1px solid #ffbddb; border-radius: 12px; } .bucket-hdr { background: #ff338f; color: #fff; font-weight: 700; text-align: left; padding: 6px 8px; } .head th { background: #fff0f7; color: #b80053; font-weight: 700; } th, td { border: 1px solid #ffe0ee; padding: 6px 8px; } .row { background: #ffffff; } .row-alt { background: #fff0f7; } .total td { background: #fff0f7; color: #b80053; font-weight: 700; } .nowrap { white-space: nowrap; } .th-center, .cell-center { text-align: center; } .nodata { text-align: center; font-style: italic; color: #6b7280; }`;
 
-      const html = `<!DOCTYPE html><html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="UTF-8" /><style>${css}</style><title>STAR - Storage Tracking &amp; Audit Reporting</title></head><body><table class="page"><tr><td colspan="2"><div style="font-weight:700; font-size:16px; color:#aa314f;">STAR - Storage Tracking &amp; Audit Reporting</div></td></tr><tr><td class="column">${left}</td><td class="column">${right}</td></tr></table></body></html>`;
+      const html = `<!DOCTYPE html><html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="UTF-8" /><style>${css}</style><title>STAR - Storage Tracking &amp; Audit Reporting</title></head><body><table class="page"><tr><td colspan="2"><div style="font-weight:700; font-size:16px; color:#e00065;">STAR - Storage Tracking &amp; Audit Reporting</div></td></tr><tr><td class="column">${left}</td><td class="column">${right}</td></tr></table></body></html>`;
 
       const blob = new Blob([html], { type: "application/vnd.ms-excel;charset=utf-8" });
       const url = URL.createObjectURL(blob);
@@ -1070,7 +1070,7 @@ const onChangeUsageDell = async (val: string) => {
           <header className="sticky top-0 z-10 border-b border-gray-200 bg-white/80 backdrop-blur dark:border-gray-800 dark:bg-gray-900/80">
             <div className="mx-auto flex max-w-screen-2xl items-center justify-between px-4 py-3">
               <div className="flex items-center gap-3">
-                <h1 className="text-2xl font-bold tracking-wide dark:text-brand-400" style={{ color: "#c84163" }}>STAR</h1>
+                <h1 className="text-2xl font-bold tracking-wide dark:text-brand-400" style={{ color: "#ff338f" }}>STAR</h1>
                 {/* Divider + tagline hide on narrower screens so they never crowd the toolbar buttons */}
                 <span className="hidden xl:inline h-5 w-px bg-gray-300 dark:bg-gray-700" />
                 <span className="hidden xl:inline text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">Storage Tracking &amp; Audit Reporting</span>
@@ -1168,7 +1168,7 @@ RULES:
 {showAI && (
   <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
     <div className="flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-gray-900">
-      <div className="flex items-center justify-between bg-gradient-to-r from-[#c84163] to-[#aa314f] px-4 py-2.5">
+      <div className="flex items-center justify-between bg-gradient-to-r from-[#ff338f] to-[#e00065] px-4 py-2.5">
         <h2 className="flex items-center gap-2 text-sm font-semibold text-white">
           <Sparkles className="h-4 w-4" /> STAR Monthly Report
         </h2>
@@ -1416,12 +1416,12 @@ function PanelWithBuckets({ title, rows, buckets, manualUsage, setManualUsage, u
   const pct = Number.isFinite(manualNum) && manualNum > 0 ? (manualNum / cap) * 100 : null;
   return (
     <div className="flex flex-col gap-2">
-      <div className="rounded-2xl px-5 py-3 bg-[#c84163] text-white shadow-sm">
+      <div className="rounded-2xl px-5 py-3 bg-[#ff338f] text-white shadow-sm">
         <div className="flex items-center justify-between gap-2 flex-nowrap">
           <div className="text-sm font-semibold whitespace-nowrap">{`${title} (Via Web)`}</div>
           <div className="flex items-center gap-1 flex-nowrap whitespace-nowrap">
             <span className="text-sm font-semibold tracking-wide">USAGE (TB):</span>
-            <input type="number" step="any" inputMode="decimal" value={manualUsage} onChange={(e) => { if (userRole === "admin") setManualUsage(e.target.value); }} onBlur={(e) => { if (userRole === "admin") setManualUsage(e.target.value); else notify("Only admins can modify usage data.", "err"); }} placeholder="—" className={`w-10 rounded-md px-1 py-0.5 text-center text-sm shadow-sm outline-none ring-0 focus:ring-2 appearance-none ${userRole === "admin" ? "bg-white text-[#aa314f] focus:ring-white/70" : "bg-gray-300 text-gray-500 cursor-not-allowed"}`} disabled={userRole !== "admin"} />
+            <input type="number" step="any" inputMode="decimal" value={manualUsage} onChange={(e) => { if (userRole === "admin") setManualUsage(e.target.value); }} onBlur={(e) => { if (userRole === "admin") setManualUsage(e.target.value); else notify("Only admins can modify usage data.", "err"); }} placeholder="—" className={`w-10 rounded-md px-1 py-0.5 text-center text-sm shadow-sm outline-none ring-0 focus:ring-2 appearance-none ${userRole === "admin" ? "bg-white text-[#e00065] focus:ring-white/70" : "bg-gray-300 text-gray-500 cursor-not-allowed"}`} disabled={userRole !== "admin"} />
             <span className="text-sm font-semibold tabular-nums whitespace-nowrap">{pct != null ? `${pct.toFixed(1)}%` : "—%"}</span>
           </div>
         </div>
@@ -1441,17 +1441,17 @@ function BucketBox({ label, rows, storageKey, side, sortPrefs, saveSortPreferenc
   const displayRows = useMemo(() => { if (!sortDesc) return rows; const copy = [...rows]; copy.sort((a, b) => (Number(b.size_tb) || 0) - (Number(a.size_tb) || 0)); return copy; }, [rows, sortDesc]);
   
   return (
-    <div className="rounded-xl border border-[#f1d0d8] dark:border-gray-800 overflow-hidden shadow-sm">
-      <div className="flex items-center justify-between bg-[#c84163] px-4 py-2 text-[12px] font-semibold uppercase tracking-wide text-white">
+    <div className="rounded-xl border border-[#ffbddb] dark:border-gray-800 overflow-hidden shadow-sm">
+      <div className="flex items-center justify-between bg-[#ff338f] px-4 py-2 text-[12px] font-semibold uppercase tracking-wide text-white">
         <span>{label}</span>
       </div>
       <table className="w-full table-auto text-sm">
         <thead>
-          <tr className="bg-[#fcf3f5] text-left font-semibold text-xs uppercase tracking-wide text-[#8a2841]">
-            <th className="w-1/2 border-b border-[#f1d0d8] px-4 py-2">Location</th>
-            <th className="w-1/4 border-b border-[#f1d0d8] px-4 py-2">Content</th>
+          <tr className="bg-[#fff0f7] text-left font-semibold text-xs uppercase tracking-wide text-[#b80053]">
+            <th className="w-1/2 border-b border-[#ffbddb] px-4 py-2">Location</th>
+            <th className="w-1/4 border-b border-[#ffbddb] px-4 py-2">Content</th>
             
-            <th className="w-1/4 border-b border-[#f1d0d8] px-4 py-2 relative">
+            <th className="w-1/4 border-b border-[#ffbddb] px-4 py-2 relative">
   <div className="absolute inset-y-0 right-3 flex flex-row-reverse items-center gap-2">
     <span>Size (TB)</span>
     <button
@@ -1472,22 +1472,22 @@ function BucketBox({ label, rows, storageKey, side, sortPrefs, saveSortPreferenc
         <tbody>
           {displayRows.length === 0 ? (
             <tr>
-              <td colSpan={3} className="border-b border-[#f8e7eb] px-4 py-2.5 text-center italic text-gray-500 dark:text-gray-400">
+              <td colSpan={3} className="border-b border-[#ffe0ee] px-4 py-2.5 text-center italic text-gray-500 dark:text-gray-400">
                 No Data Available.
               </td>
             </tr>
           ) : (
             displayRows.map((r, i) => (
-              <tr key={i} className={i % 2 === 0 ? "bg-white dark:bg-gray-900" : "bg-[#fcf3f5] dark:bg-gray-950"}>
-                <td className="border-b border-[#f8e7eb] px-4 py-2 font-medium text-brand-800 dark:text-brand-300 whitespace-nowrap">{r.location}</td>
-                <td className="border-b border-[#f8e7eb] px-4 py-2">{r.content ?? ""}</td>
-                <td className="border-b border-[#f8e7eb] px-4 py-2 text-right tabular-nums">{formatTB(Number(r.size_tb) || 0)}</td>
+              <tr key={i} className={i % 2 === 0 ? "bg-white dark:bg-gray-900" : "bg-[#fff0f7] dark:bg-gray-950"}>
+                <td className="border-b border-[#ffe0ee] px-4 py-2 font-medium text-brand-800 dark:text-brand-300 whitespace-nowrap">{r.location}</td>
+                <td className="border-b border-[#ffe0ee] px-4 py-2">{r.content ?? ""}</td>
+                <td className="border-b border-[#ffe0ee] px-4 py-2 text-right tabular-nums">{formatTB(Number(r.size_tb) || 0)}</td>
               </tr>
             ))
           )}
         </tbody>
         <tfoot>
-          <tr className="bg-[#fcf3f5] font-semibold text-[#8a2841] text-sm">
+          <tr className="bg-[#fff0f7] font-semibold text-[#b80053] text-sm">
             <td className="px-4 py-2">TOTAL:</td>
             <td className="px-4 py-2"></td>
             <td className="px-4 py-2 text-right tabular-nums">{formatTB(Number(total) || 0)}</td>
