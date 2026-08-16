@@ -125,7 +125,7 @@ const rootTotal = (rows: any[], root: string) =>
 // Built for Outlook on Windows (Word engine): no flexbox, no grid, no
 // border-radius, no max-width, and unreliable percentage widths - so this is
 // fixed-pixel tables + inline styles + bgcolor attributes throughout.
-const ACCENT = "#e82a78", ACCENT2 = "#9d114a";
+const ACCENT = "#e82a78", ACCENT2 = "#c1155c";
 const W = 780, COL = 380, BAR = 344;
 
 function escHtml(s: any) {
@@ -973,9 +973,9 @@ const onChangeUsageDell = async (val: string) => {
       const left = buildSide("Post Prod HR Storage IBM", usageIbm, capIbm, ibmBuckets, ibmRows);
       const right = buildSide("Post Prod HR Storage Dell Compellent", usageDell, capDell, dellBuckets, dellRows);
 
-      const css = `body { font-family: Arial, sans-serif; font-size: 12px; } .page { width: 100%; } .column { vertical-align: top; width: 50%; } .gap { height: 10px; } .webcard { border-collapse: collapse; width: 100%; background: #e82a78; color: #fff; } .webcard td { padding: 6px 8px; } .webtitle { font-weight: 700; font-size: 12px; } .webusage-label { font-weight: 700; font-size: 12px; text-align: center; } .webusage-value { background: #ffffff; color: #9d114a; text-align: center; padding: 2px 6px; font-weight: 600; } .webusage-pct { font-weight: 700; font-size: 12px; text-align: center; } .card { border-collapse: collapse; width: 100%; border: 1px solid #f9c3d9; border-radius: 12px; } .bucket-hdr { background: #e82a78; color: #fff; font-weight: 700; text-align: left; padding: 6px 8px; } .head th { background: #fef1f6; color: #9d114a; font-weight: 700; } th, td { border: 1px solid #fce3ed; padding: 6px 8px; } .row { background: #ffffff; } .row-alt { background: #fef1f6; } .total td { background: #fef1f6; color: #9d114a; font-weight: 700; } .nowrap { white-space: nowrap; } .th-center, .cell-center { text-align: center; } .nodata { text-align: center; font-style: italic; color: #6b7280; }`;
+      const css = `body { font-family: Arial, sans-serif; font-size: 12px; } .page { width: 100%; } .column { vertical-align: top; width: 50%; } .gap { height: 10px; } .webcard { border-collapse: collapse; width: 100%; background: #e82a78; color: #fff; } .webcard td { padding: 6px 8px; } .webtitle { font-weight: 700; font-size: 12px; } .webusage-label { font-weight: 700; font-size: 12px; text-align: center; } .webusage-value { background: #ffffff; color: #c1155c; text-align: center; padding: 2px 6px; font-weight: 600; } .webusage-pct { font-weight: 700; font-size: 12px; text-align: center; } .card { border-collapse: collapse; width: 100%; border: 1px solid #f9c3d9; border-radius: 12px; } .bucket-hdr { background: #e82a78; color: #fff; font-weight: 700; text-align: left; padding: 6px 8px; } .head th { background: #fef1f6; color: #9d114a; font-weight: 700; } th, td { border: 1px solid #fce3ed; padding: 6px 8px; } .row { background: #ffffff; } .row-alt { background: #fef1f6; } .total td { background: #fef1f6; color: #9d114a; font-weight: 700; } .nowrap { white-space: nowrap; } .th-center, .cell-center { text-align: center; } .nodata { text-align: center; font-style: italic; color: #6b7280; }`;
 
-      const html = `<!DOCTYPE html><html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="UTF-8" /><style>${css}</style><title>STAR - Storage Tracking &amp; Audit Reporting</title></head><body><table class="page"><tr><td colspan="2"><div style="font-weight:700; font-size:16px; color:#9d114a;">STAR - Storage Tracking &amp; Audit Reporting</div></td></tr><tr><td class="column">${left}</td><td class="column">${right}</td></tr></table></body></html>`;
+      const html = `<!DOCTYPE html><html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="UTF-8" /><style>${css}</style><title>STAR - Storage Tracking &amp; Audit Reporting</title></head><body><table class="page"><tr><td colspan="2"><div style="font-weight:700; font-size:16px; color:#c1155c;">STAR - Storage Tracking &amp; Audit Reporting</div></td></tr><tr><td class="column">${left}</td><td class="column">${right}</td></tr></table></body></html>`;
 
       const blob = new Blob([html], { type: "application/vnd.ms-excel;charset=utf-8" });
       const url = URL.createObjectURL(blob);
@@ -1168,7 +1168,7 @@ RULES:
 {showAI && (
   <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
     <div className="flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-gray-900">
-      <div className="flex items-center justify-between bg-gradient-to-r from-[#e82a78] to-[#9d114a] px-4 py-2.5">
+      <div className="flex items-center justify-between bg-gradient-to-r from-[#e82a78] to-[#c1155c] px-4 py-2.5">
         <h2 className="flex items-center gap-2 text-sm font-semibold text-white">
           <Sparkles className="h-4 w-4" /> STAR Monthly Report
         </h2>
@@ -1187,12 +1187,12 @@ RULES:
           <>
             <div className="grid gap-3 sm:grid-cols-2">
               <CapacityGauge label="Post Prod HR Storage IBM" used={Number(manualWebIBM) || 0} total={660} bar="bg-brand-600" />
-              <CapacityGauge label="Dell Compellent" used={Number(manualWebDell) || 0} total={616} bar="bg-brand-500" />
+              <CapacityGauge label="Dell Compellent" used={Number(manualWebDell) || 0} total={616} bar="bg-brand-700" />
             </div>
 
             <div className="mt-5 grid gap-5 sm:grid-cols-2">
               <TopPaths title="IBM &mdash; Top 5 Paths" rows={ibmRows} bar="bg-brand-600" />
-              <TopPaths title="Dell &mdash; Top 5 Paths" rows={dellRows} bar="bg-brand-500" />
+              <TopPaths title="Dell &mdash; Top 5 Paths" rows={dellRows} bar="bg-brand-700" />
             </div>
 
             <div className="mt-6 border-t border-gray-200 pt-4 dark:border-gray-800">
