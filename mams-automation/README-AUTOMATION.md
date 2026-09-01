@@ -112,6 +112,20 @@ inbox; on success the terminal prints `Email sent to: ...`.
   silently fail under cron.
 - Confirm `which node` on each machine before trusting a hardcoded `node`
   path in a cron line — it differs between macOS (Homebrew) and the VM.
+- **Check `/etc/cron.d/` too, not just `crontab -l`** — a job can end up
+  scheduled in BOTH places at once (system-wide `/etc/cron.d/<name>` file
+  AND a user's personal crontab) without either being obviously wrong on
+  its own. This actually happened here: `/etc/cron.d/mams-monthly-report`
+  (pre-existing, unrelated to the crontab line documented above) fired the
+  exact same `monthly-report.js` job at the exact same 10am time, so the
+  Aug 2026 report email sent twice. Diagnosed via `journalctl -u cron |
+  grep monthly-report`, which showed two distinct CMD lines with slightly
+  different argument order at the same timestamp — that's the signature
+  of two independent schedulers hitting the same job, not a bug in the
+  script itself. Fixed by `sudo rm /etc/cron.d/mams-monthly-report`,
+  keeping the crontab entry above as the single source of truth. If a
+  STAR email/job ever seems to double-fire again, check
+  `sudo ls /etc/cron.d/` first.
 
 Everything above — the scan, the push, the daily usage refresh, and the
 monthly export/email — now runs unattended.
