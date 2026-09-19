@@ -430,7 +430,7 @@ app.get('/api/health', (req, res) => {
 // Everything under /api/v1 is GET-only and considered a stable contract -
 // other apps can build against it without tracking internal app changes.
 const CAP_IBM = 660;
-const CAP_DELL = 616;
+const CAP_DELL = 440;
 
 app.get('/api/v1', (req, res) => {
   res.json({

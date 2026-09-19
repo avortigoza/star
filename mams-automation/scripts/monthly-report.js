@@ -29,7 +29,7 @@ const DATA_DIR = path.resolve(__dirname, "..", process.env.MAMS_DATA_DIR || "dat
 const API_URL = process.env.MAMS_API_URL || "http://localhost:5179";
 const REPORTS_DIR = process.env.MAMS_REPORTS_DIR || path.join(__dirname, "..", "reports");
 const CAP_IBM = 660;
-const CAP_DELL = 616;
+const CAP_DELL = 440;
 
 const parseAddrs = (v) => (v || "").split(",").map((s) => s.trim()).filter(Boolean);
 const EMAIL_TO = parseAddrs(process.env.EMAIL_TO);
@@ -51,10 +51,10 @@ function getBuckets(side) {
     ];
   }
   return [
-    { label: "/Volumes/sncomprod", prefix: "/Volumes/sncomprod", exclude: ["/Volumes/sncomprod/media/", "/Volumes/sncomprod/prod_hr2"] },
-    { label: "/Volumes/sncomprod/media", prefix: "/Volumes/sncomprod/media", exclude: ["/Volumes/sncomprod/media/hr/"], skipExact: true },
-    { label: "/Volumes/sncomprod/media/hr", prefix: "/Volumes/sncomprod/media/hr", skipExact: true },
-    { label: "/Volumes/sncomprod/prod_hr2", prefix: "/Volumes/sncomprod/prod_hr2" },
+    { label: "/Volumes/snibmfs5kprod", prefix: "/Volumes/snibmfs5kprod", exclude: ["/Volumes/snibmfs5kprod/media/", "/Volumes/snibmfs5kprod/prod_hr2"] },
+    { label: "/Volumes/snibmfs5kprod/media", prefix: "/Volumes/snibmfs5kprod/media", exclude: ["/Volumes/snibmfs5kprod/media/hr/"], skipExact: true },
+    { label: "/Volumes/snibmfs5kprod/media/hr", prefix: "/Volumes/snibmfs5kprod/media/hr", skipExact: true },
+    { label: "/Volumes/snibmfs5kprod/prod_hr2", prefix: "/Volumes/snibmfs5kprod/prod_hr2" },
   ];
 }
 
@@ -94,7 +94,7 @@ function buildWorkbookHtml({ ibmRows, dellRows, usageIbm, usageDell, sortPrefs }
   };
 
   const left = buildSide("Post Prod HR Storage IBM", usageIbm, CAP_IBM, ibmBuckets, ibmRows);
-  const right = buildSide("Post Prod HR Storage Dell Compellent", usageDell, CAP_DELL, dellBuckets, dellRows);
+  const right = buildSide("Post Prod HR Storage IBM FS5K", usageDell, CAP_DELL, dellBuckets, dellRows);
 
   const css = `body { font-family: Arial, sans-serif; font-size: 12px; } .page { width: 100%; } .column { vertical-align: top; width: 50%; } .gap { height: 10px; } .webcard { border-collapse: collapse; width: 100%; background: #2f5da8; color: #fff; } .webcard td { padding: 6px 8px; } .webtitle { font-weight: 700; font-size: 12px; } .webusage-label { font-weight: 700; font-size: 12px; text-align: center; } .webusage-value { background: #ffffff; color: #1f4294; text-align: center; padding: 2px 6px; font-weight: 600; } .webusage-pct { font-weight: 700; font-size: 12px; text-align: center; } .card { border-collapse: collapse; width: 100%; border: 1px solid #c7d2e9; border-radius: 12px; } .bucket-hdr { background: #2f5da8; color: #fff; font-weight: 700; text-align: left; padding: 6px 8px; } .head th { background: #e8f0fe; color: #1f4294; font-weight: 700; } th, td { border: 1px solid #e1e8f8; padding: 6px 8px; } .row { background: #ffffff; } .row-alt { background: #f6f9ff; } .total td { background: #e8f0fe; color: #1f4294; font-weight: 700; } .nowrap { white-space: nowrap; } .th-center, .cell-center { text-align: center; } .nodata { text-align: center; font-style: italic; color: #6b7280; }`;
 
@@ -137,19 +137,19 @@ function buildTakeaways(usageIbm, usageDell, ibmTotal, dellTotal, ibmRows, dellR
 
   // Comparison direction is computed, never assumed.
   const cmp = pD > pI ? `slightly higher at ${pD.toFixed(1)}%` : pD < pI ? `slightly lower at ${pD.toFixed(1)}%` : `at the same ${pD.toFixed(1)}%`;
-  lines.push(`- Dell is ${cmp}, using ${usageDell} TB of its ${CAP_DELL} TB with ${freeDell.toFixed(0)} TB free. The two have ${(freeIbm + freeDell).toFixed(0)} TB of free space combined.`);
+  lines.push(`- IBM FS5K is ${cmp}, using ${usageDell} TB of its ${CAP_DELL} TB with ${freeDell.toFixed(0)} TB free. The two have ${(freeIbm + freeDell).toFixed(0)} TB of free space combined.`);
 
   const gI = usageIbm > 0 ? ((usageIbm - ibmTotal) / usageIbm) * 100 : 0;
   const gD = usageDell > 0 ? ((usageDell - dellTotal) / usageDell) * 100 : 0;
   const sameGap = Math.abs(gI - gD) < 1.5;
-  lines.push(`- The folder scan found ${tb2(ibmTotal)} TB on IBM and ${tb2(dellTotal)} TB on Dell. Both come out about ${((gI + gD) / 2).toFixed(0)}% lower than what the storage systems report${sameGap ? ", and the difference is the same on both, so nothing looks off" : ", and the difference is not the same on both this time"}.`);
+  lines.push(`- The folder scan found ${tb2(ibmTotal)} TB on IBM and ${tb2(dellTotal)} TB on IBM FS5K. Both come out about ${((gI + gD) / 2).toFixed(0)}% lower than what the storage systems report${sameGap ? ", and the difference is the same on both, so nothing looks off" : ", and the difference is not the same on both this time"}.`);
 
   const ti = topOf(ibmRows, "/Volumes/snibmprod");
-  const td = topOf(dellRows, "/Volumes/sncomprod");
+  const td = topOf(dellRows, "/Volumes/snibmfs5kprod");
   if (ti && td) {
     const shI = ibmTotal > 0 ? (Number(ti.size_tb) / ibmTotal) * 100 : 0;
     const shD = dellTotal > 0 ? (Number(td.size_tb) / dellTotal) * 100 : 0;
-    lines.push(`- Most of the data is in a single folder on each system. ${ti.location} holds ${tb2(Number(ti.size_tb) || 0)} TB, which is ${shI.toFixed(0)}% of IBM's measured total, and ${td.location} holds ${tb2(Number(td.size_tb) || 0)} TB, or ${shD.toFixed(0)}% of Dell's.`);
+    lines.push(`- Most of the data is in a single folder on each system. ${ti.location} holds ${tb2(Number(ti.size_tb) || 0)} TB, which is ${shI.toFixed(0)}% of IBM's measured total, and ${td.location} holds ${tb2(Number(td.size_tb) || 0)} TB, or ${shD.toFixed(0)}% of IBM FS5K's.`);
   }
 
   return `\n\n**Key Takeaways**\n\n${lines.join("\n")}`;
@@ -288,13 +288,13 @@ function buildReportHtml(o) {
   <tr><td style="padding:18px 15px 6px;">
     <table cellpadding="0" cellspacing="0" border="0" role="presentation" width="${W - 30}" style="width:${W - 30}px;"><tr>
       ${gaugeCell("Post Prod HR Storage IBM", o.ibmUsage, 660, ACCENT)}
-      ${gaugeCell("Dell Compellent", o.dellUsage, 616, ACCENT2)}
+      ${gaugeCell("Post Prod HR Storage IBM FS5K", o.dellUsage, 440, ACCENT2)}
     </tr></table>
   </td></tr>
   <tr><td style="padding:14px 15px 0;">
     <table cellpadding="0" cellspacing="0" border="0" role="presentation" width="${W - 30}" style="width:${W - 30}px;"><tr>
       ${topPathsCell("IBM - Top 5 Paths", o.ibmRows, ACCENT, tb2)}
-      ${topPathsCell("Dell - Top 5 Paths", o.dellRows, ACCENT2, tb2)}
+      ${topPathsCell("IBM FS5K - Top 5 Paths", o.dellRows, ACCENT2, tb2)}
     </tr></table>
   </td></tr>
   <tr><td style="padding:8px 24px 26px;">
@@ -310,9 +310,9 @@ function buildReportHtml(o) {
 
 function buildAiPrompt({ ibmRows, dellRows, usageIbm, usageDell }) {
   const ibmTopLevel = rootChildren(ibmRows, "/Volumes/snibmprod");
-  const dellTopLevel = rootChildren(dellRows, "/Volumes/sncomprod");
+  const dellTopLevel = rootChildren(dellRows, "/Volumes/snibmfs5kprod");
   const ibmTotal = rootTotal(ibmRows, "/Volumes/snibmprod");
-  const dellTotal = rootTotal(dellRows, "/Volumes/sncomprod");
+  const dellTotal = rootTotal(dellRows, "/Volumes/snibmfs5kprod");
 
   return `Summarize the storage data from these tables in a clear, concise way:
 
@@ -320,7 +320,7 @@ IBM STORAGE DATA (Capacity: ${CAP_IBM} TB):
 - Web-reported usage: ${usageIbm} TB (${((usageIbm / CAP_IBM) * 100).toFixed(1)}% of capacity)
 - From script scan: ${formatTB(ibmTotal)} TB actually occupied, across ${ibmTopLevel.length} top-level folders (${ibmRows.length} rows scanned in total, including nested subfolders)
 
-DELL STORAGE DATA (Capacity: ${CAP_DELL} TB):
+IBM FS5K STORAGE DATA (Capacity: ${CAP_DELL} TB):
 - Web-reported usage: ${usageDell} TB (${((usageDell / CAP_DELL) * 100).toFixed(1)}% of capacity)
 - From script scan: ${formatTB(dellTotal)} TB actually occupied, across ${dellTopLevel.length} top-level folders (${dellRows.length} rows scanned in total, including nested subfolders)
 
@@ -329,7 +329,7 @@ TOP STORAGE CONSUMERS FROM TABLES:
 IBM Top Paths:
 ${[...ibmRows].sort((a, b) => (b.size_tb || 0) - (a.size_tb || 0)).slice(0, 10).map((r, i) => `${i + 1}. ${r.location}: ${formatTB(r.size_tb || 0)} TB${r.content ? ` (${r.content})` : ""}`).join("\n")}
 
-Dell Top Paths:
+IBM FS5K Top Paths:
 ${[...dellRows].sort((a, b) => (b.size_tb || 0) - (a.size_tb || 0)).slice(0, 10).map((r, i) => `${i + 1}. ${r.location}: ${formatTB(r.size_tb || 0)} TB${r.content ? ` (${r.content})` : ""}`).join("\n")}
 
 INSTRUCTIONS:
@@ -341,7 +341,7 @@ Output EXACTLY these two sections, in this order, and nothing else. Both are req
 - Total capacity: <value> TB
 - Web-reported usage: <value> TB (<value>% of capacity)
 - Actual occupied space: <value> TB
-- Dell Storage:
+- IBM FS5K Storage:
 - Total capacity: <value> TB
 - Web-reported usage: <value> TB (<value>% of capacity)
 - Actual occupied space: <value> TB
@@ -350,7 +350,7 @@ Output EXACTLY these two sections, in this order, and nothing else. Both are req
 
 - IBM Storage:
 - <top 5 paths, each with its size in TB>
-- Dell Storage:
+- IBM FS5K Storage:
 - <top 5 paths, each with its size in TB>
 
 RULES:
@@ -430,7 +430,7 @@ async function main() {
     console.error("AI summary generation failed, sending the report without it:", e.message);
     summary = `(AI summary unavailable this run: ${e.message})`;
   }
-  summary += buildTakeaways(usageIbm, usageDell, rootTotal(ibmRows, "/Volumes/snibmprod"), rootTotal(dellRows, "/Volumes/sncomprod"), ibmRows, dellRows);
+  summary += buildTakeaways(usageIbm, usageDell, rootTotal(ibmRows, "/Volumes/snibmprod"), rootTotal(dellRows, "/Volumes/snibmfs5kprod"), ibmRows, dellRows);
   // The formatted summary goes in the EMAIL BODY (below), not as an attachment -
   // HTML attachments are commonly blocked by corporate mail filters. A local copy
   // is still written to REPORTS_DIR for reference/archiving.

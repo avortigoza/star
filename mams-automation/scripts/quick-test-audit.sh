@@ -4,7 +4,7 @@
 # FOR TESTING ONLY - not for production/monthly use.
 #
 # Your real script scans everything under /Volumes/snibmprod and
-# /Volumes/sncomprod (which is why it takes ~6 hours), and also builds
+# /Volumes/snibmfs5kprod (which is why it takes ~6 hours), and also builds
 # Vizone_All_Mats_*.csv / Ardome_All_Mats_*.csv via a recursive `ls -lR`
 # over every file - neither of those two are read by push-to-mams.js, so
 # this test script skips them entirely.
@@ -20,8 +20,8 @@ mkdir -p "$loc"
 echo 'Checking disk storage at snibmprod (TEST MODE - first 5 items only)'
 ls -d /Volumes/snibmprod/*/ /Volumes/snibmprod/* 2>/dev/null | sort -u | head -5 | xargs du -sk 2>/dev/null | awk '{print $1","$2}' | tee "$loc/IBM.csv"
 
-echo 'Checking disk storage at sncomprod (TEST MODE - first 5 items only)'
-ls -d /Volumes/sncomprod/*/ /Volumes/sncomprod/* 2>/dev/null | sort -u | head -5 | xargs du -sk 2>/dev/null | awk '{print $1","$2}' | tee "$loc/COMP.csv"
+echo 'Checking disk storage at snibmfs5kprod (TEST MODE - first 5 items only)'
+ls -d /Volumes/snibmfs5kprod/*/ /Volumes/snibmfs5kprod/* 2>/dev/null | sort -u | head -5 | xargs du -sk 2>/dev/null | awk '{print $1","$2}' | tee "$loc/COMP.csv"
 
 automation="/Users/postmams/Documents/scripts/audit_storage/mams-automation"
 echo 'Pushing IBM data to MAMS Storage Audit app'

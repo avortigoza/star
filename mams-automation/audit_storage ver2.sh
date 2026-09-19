@@ -26,24 +26,24 @@ echo 'Checking disk storage at snibmprod/media/hr/hr1'
 du -sk /Volumes/snibmprod/media/hr/hr1/* | awk '{print $1","$2}' | tee -a $loc/IBM.csv
 
 
-echo 'Checking disk storage at sncomprod'
-du -sk /Volumes/sncomprod/* | awk '{print $1","$2}' | tee $loc/COMP.csv
-echo 'Checking disk storage at sncomprod/media'
-du -sk /Volumes/sncomprod/media/* | awk '{print $1","$2}' | tee -a $loc/COMP.csv
-echo 'Checking disk storage at sncomprod/prod_hr3'
-du -sk /Volumes/sncomprod/prod_hr3/* | awk '{print $1","$2}' | tee -a $loc/COMP.csv
-echo 'Checking disk storage at sncomprod/media/hr/hr1'
-du -sk /Volumes/sncomprod/media/hr/hr1/* | awk '{print $1","$2}' | tee -a $loc/COMP.csv
+echo 'Checking disk storage at snibmfs5kprod'
+du -sk /Volumes/snibmfs5kprod/* | awk '{print $1","$2}' | tee $loc/COMP.csv
+echo 'Checking disk storage at snibmfs5kprod/media'
+du -sk /Volumes/snibmfs5kprod/media/* | awk '{print $1","$2}' | tee -a $loc/COMP.csv
+echo 'Checking disk storage at snibmfs5kprod/prod_hr3'
+du -sk /Volumes/snibmfs5kprod/prod_hr3/* | awk '{print $1","$2}' | tee -a $loc/COMP.csv
+echo 'Checking disk storage at snibmfs5kprod/media/hr/hr1'
+du -sk /Volumes/snibmfs5kprod/media/hr/hr1/* | awk '{print $1","$2}' | tee -a $loc/COMP.csv
 
 
 echo 'Gathering Data at snibmprod/media/hr/hr1'
 ls -lR /Volumes/snibmprod/media/hr/hr1/* | grep -e ".mxf" -e ".mov" | awk '{print $5","$9}' | grep -v 'mxf-op1a' | tee $loc/Vizone_All_Mats_IBM.csv
-echo 'Gathering Data at sncomprod/media/hr/hr1'
-ls -lR /Volumes/sncomprod/media/hr/hr1/* | grep -e ".mxf" -e ".mov" | awk '{print $5","$9}' | grep -v 'mxf-op1a' | tee $loc/Vizone_All_Mats_COMP.csv
+echo 'Gathering Data at snibmfs5kprod/media/hr/hr1'
+ls -lR /Volumes/snibmfs5kprod/media/hr/hr1/* | grep -e ".mxf" -e ".mov" | awk '{print $5","$9}' | grep -v 'mxf-op1a' | tee $loc/Vizone_All_Mats_COMP.csv
 echo 'Gathering Data at /snibmprod/prod_hr2'
 ls -lR /Volumes/snibmprod/prod_hr2 | grep -e .mxf -e .mov -e .wav -e .aiff -e "_" | grep -v prod_hr | awk '{print $9","$5}' | tee $loc/Ardome_All_Mats_IBM.csv
-echo 'Gathering Data at /sncomprod/prod_hr3'
-ls -lR /Volumes/sncomprod/prod_hr3 | grep -e .mxf -e .mov -e .wav -e .aiff -e "_" | grep -v prod_hr | awk '{print $9","$5}' | tee $loc/Ardome_All_Mats_COMP.csv
+echo 'Gathering Data at /snibmfs5kprod/prod_hr3'
+ls -lR /Volumes/snibmfs5kprod/prod_hr3 | grep -e .mxf -e .mov -e .wav -e .aiff -e "_" | grep -v prod_hr | awk '{print $9","$5}' | tee $loc/Ardome_All_Mats_COMP.csv
 
 # ---- Added: push freshly-generated IBM.csv / COMP.csv to the MAMS Storage
 # ---- Audit web app, same effect as clicking Import in the browser.

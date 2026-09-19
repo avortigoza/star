@@ -50,13 +50,13 @@ function deriveContent(side, loc) {
     return ibmPrefixes.some((p) => L.startsWith(p)) ? "System Files" : "";
   }
   const dellPrefixes = [
-    "/volumes/sncomprod/lost+found",
-    "/volumes/sncomprod/epr",
-    "/volumes/sncomprod/library",
-    "/volumes/sncomprod/snibmprod",
-    "/volumes/sncomprod/media/hr",
-    "/volumes/sncomprod/media",
-    "/volumes/sncomprod/prod_hr2",
+    "/volumes/snibmfs5kprod/lost+found",
+    "/volumes/snibmfs5kprod/epr",
+    "/volumes/snibmfs5kprod/library",
+    "/volumes/snibmfs5kprod/snibmprod",
+    "/volumes/snibmfs5kprod/media/hr",
+    "/volumes/snibmfs5kprod/media",
+    "/volumes/snibmfs5kprod/prod_hr2",
   ];
   return dellPrefixes.some((p) => L.startsWith(p)) ? "System Files" : "";
 }

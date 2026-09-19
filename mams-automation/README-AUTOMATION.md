@@ -8,7 +8,7 @@ Three jobs chain together across two machines:
 
 | Time | Runs on | Job | Does |
 |---|---|---|---|
-| Midnight, last day of month | Mac Studio | `audit_storage ver2.sh` | Scans `/Volumes/snibmprod` + `/Volumes/sncomprod`, writes `IBM.csv`/`COMP.csv`, pushes both into the app via `push-to-mams.js` |
+| Midnight, last day of month | Mac Studio | `audit_storage ver2.sh` | Scans `/Volumes/snibmprod` + `/Volumes/snibmfs5kprod`, writes `IBM.csv`/`COMP.csv`, pushes both into the app via `push-to-mams.js` |
 | 8:00 AM, every day | VM | `fetch-usage.js` | SSHes into the Mac Studio, runs `df -k` on both volumes, pushes fresh "Via Web" usage numbers into the app |
 | 10:00 AM, last day of month | VM | `monthly-report.js` | Reads the app's data, builds the Excel export + AI summary, emails both out |
 
@@ -17,6 +17,27 @@ time the 10am email fires — no more updating them by hand before month-end.
 
 This is a bolt-on: it doesn't modify `server.js`, `App.tsx`, or your CSVs. The
 manual Import/Export/AI buttons in the browser still work exactly as before.
+
+## Hardware note: Dell Compellent → IBM FS5K (Sept 2026)
+
+The second storage array was replaced: `sncomprod` (Dell Compellent, 616 TB)
+is now `snibmfs5kprod` (IBM FS5K, 440 TB). Every mount path, capacity number,
+and human-facing label (UI, printed report, emailed report, AI prompt/summary
+text) was updated to match.
+
+**What did NOT change:** the internal identifier `comp`/`COMP` — used as the
+JSON key in `data/usage.json` and `data/rows.json`, the CSV filename
+(`COMP.csv`), the `/api/v1` endpoint key (`GET /api/v1/rows/comp`), and
+variable names throughout the code (`dellRows`, `CAP_DELL`, etc.). Renaming
+that internal key would have broken the `/api/v1` contract other apps may
+already be querying, plus historical CSV/JSON data — not worth it for what's
+just an arbitrary internal label. Read `comp` as "the second storage array,"
+not literally "Compellent," going forward.
+
+If a third hardware swap ever happens again, repeat this pattern: update the
+mount path, capacity, and every display-facing string; leave the internal
+`comp` key alone unless there's a real reason to touch the data schema itself.
+
 
 ## Part 1 — Mac Studio: scan + auto-push CSVs
 
@@ -49,7 +70,7 @@ bad run can't wipe out good data already in the app.
 failing). It now SSHes directly into the Mac Studio and reads `df -k`:
 
 ```
-ssh postmams@10.0.0.164 "df -k /Volumes/snibmprod /Volumes/sncomprod"
+ssh postmams@10.0.0.164 "df -k /Volumes/snibmprod /Volumes/snibmfs5kprod"
 ```
 
 Requires **passwordless SSH key auth** from the VM to the Mac Studio:

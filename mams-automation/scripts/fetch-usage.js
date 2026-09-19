@@ -6,7 +6,7 @@ const execFileAsync = promisify(execFile);
 const SSH_HOST = process.env.MAC_STUDIO_HOST || "10.0.0.164";
 const SSH_USER = process.env.MAC_STUDIO_USER || "postmams";
 const IBM_MOUNT = process.env.IBM_MOUNT || "/Volumes/snibmprod";
-const COMP_MOUNT = process.env.COMP_MOUNT || "/Volumes/sncomprod";
+const COMP_MOUNT = process.env.COMP_MOUNT || "/Volumes/snibmfs5kprod";
 const MAMS_API_URL = (process.env.MAMS_API_URL || "http://localhost:5179").replace(/\/+$/, "");
 
 // df -k reports 1024-byte (KiB) blocks. We convert to decimal TB (1e12 bytes)
@@ -70,8 +70,8 @@ async function main() {
   const ibm = Math.round(ibmUsed);
   const comp = Math.round(dellUsed);
 
-  if (ibm < 0 || ibm > 660 || comp < 0 || comp > 616) {
-    throw new Error(`Refusing to push out-of-range values (IBM=${ibm} of 660, COMP=${comp} of 616).`);
+  if (ibm < 0 || ibm > 660 || comp < 0 || comp > 440) {
+    throw new Error(`Refusing to push out-of-range values (IBM=${ibm} of 660, COMP=${comp} of 440).`);
   }
 
   await pushUsage(ibm, comp);
