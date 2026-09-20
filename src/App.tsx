@@ -1237,7 +1237,7 @@ const onChangeUsageDell = async (val: string) => {
                     {branding.taglineImageDataUrl ? (
                       <img src={branding.taglineImageDataUrl} alt={branding.tagline} className="hidden xl:inline h-6 object-contain" />
                     ) : (
-                      <span className="hidden xl:inline text-base text-gray-500 dark:text-gray-400 whitespace-nowrap">{branding.tagline}</span>
+                      <span className="hidden xl:inline text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">{branding.tagline}</span>
                     )}
                   </>
                 )}
