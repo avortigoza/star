@@ -7,7 +7,11 @@ const app = express();
 const PORT = 5179;
 
 app.use(cors());
-app.use(express.json());
+// Default 100kb is too small for /api/branding's base64 logo uploads (see
+// that route below) - raised globally since this is the middleware that
+// actually applies first; a route-specific override on just that route
+// would never take effect; body-parser only parses the request body once.
+app.use(express.json({ limit: '3mb' }));
 app.use(express.static(path.join(__dirname, 'dist')));
 
 const DATA_DIR = path.join(__dirname, 'data');
@@ -51,9 +55,7 @@ app.get('/api/branding', async (req, res) => {
   }
 });
 
-// Bigger JSON body limit on just this route - a base64 logo data URL can
-// easily exceed express.json()'s default 100kb limit used everywhere else.
-app.put('/api/branding', express.json({ limit: '3mb' }), async (req, res) => {
+app.put('/api/branding', async (req, res) => {
   const { appName, accentColor, logoDataUrl, logoIncludesText } = req.body || {};
   if (typeof appName !== 'string' || !appName.trim() || appName.length > 60) {
     return res.status(400).json({ error: "App name must be 1-60 characters." });
