@@ -22,7 +22,7 @@ type Bucket = { label: string; prefix: string; exclude?: string[]; skipExact?: b
 // =============================
 // Login Component
 // =============================
-function Login({ onLogin }: { onLogin: (username: string, role: string) => void }) {
+function Login({ onLogin, branding }: { onLogin: (username: string, role: string) => void; branding: { appName: string; accentColor: string; logoDataUrl: string | null } }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -65,8 +65,12 @@ function Login({ onLogin }: { onLogin: (username: string, role: string) => void 
     <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-950">
       <form onSubmit={submit} className="w-96 rounded-2xl bg-white dark:bg-gray-900 p-8 shadow-lg flex flex-col gap-4">
         <div className="text-center mb-2">
-          <Star size={52} className="mx-auto mb-3 dark:text-blue-400" style={{ color: "#2f5da8" }} fill="currentColor" strokeLinejoin="round" />
-          <h2 className="text-4xl font-bold tracking-wide text-[#2f5da8] dark:text-blue-400">STAR</h2>
+          {branding.logoDataUrl ? (
+            <img src={branding.logoDataUrl} alt={branding.appName} className="mx-auto mb-3 h-14 object-contain" />
+          ) : (
+            <Star size={52} className="mx-auto mb-3" style={{ color: branding.accentColor }} fill="currentColor" strokeLinejoin="round" />
+          )}
+          <h2 className="text-4xl font-bold tracking-wide" style={{ color: branding.accentColor }}>{branding.appName}</h2>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-2 whitespace-nowrap">Storage Tracking &amp; Audit Reporting</p>
         </div>
         {error && <div className="rounded-md bg-red-50 dark:bg-red-900/30 p-3 text-sm text-red-800 dark:text-red-300">{error}</div>}
@@ -127,6 +131,19 @@ const rootTotal = (rows: any[], root: string) =>
 // fixed-pixel tables + inline styles + bgcolor attributes throughout.
 const ACCENT = "#2f5da8", ACCENT2 = "#4f46e5";
 const W = 780, COL = 380, BAR = 344;
+
+// Darkens a #rrggbb hex color by the given fraction (0-1) - used to derive a
+// second gradient stop from the admin-configured branding accent color,
+// mirroring the original two-tone header (e.g. #2f5da8 -> #1f4294).
+function darkenHex(hex: string, amount = 0.28): string {
+  const m = /^#([0-9a-fA-F]{6})$/.exec(hex);
+  if (!m) return hex;
+  const n = parseInt(m[1], 16);
+  const r = Math.round(((n >> 16) & 255) * (1 - amount));
+  const g = Math.round(((n >> 8) & 255) * (1 - amount));
+  const b = Math.round((n & 255) * (1 - amount));
+  return `#${[r, g, b].map((c) => c.toString(16).padStart(2, "0")).join("")}`;
+}
 
 function escHtml(s: any) {
   return String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -626,6 +643,24 @@ async function apiLoadUsage() {
   } catch (error) { console.error("apiLoadUsage error:", error); throw error; }
 }
 
+async function apiLoadBranding() {
+  try {
+    const r = await fetch(`${API}/branding`, { cache: "no-store" });
+    if (!r.ok) throw new Error("Load branding failed");
+    return await r.json();
+  } catch (error) {
+    console.warn("apiLoadBranding error, using defaults:", error);
+    return { appName: "STAR", accentColor: "#2f5da8", logoDataUrl: null };
+  }
+}
+
+async function apiSaveBranding(branding: { appName: string; accentColor: string; logoDataUrl: string | null }) {
+  const r = await fetch(`${API}/branding`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(branding) });
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(data.error || "Save branding failed");
+  return data;
+}
+
 async function apiLoadMeta() {
   const r = await fetch(`${API}/meta`, { cache: "no-store" });
   if (!r.ok) throw new Error("Load meta failed");
@@ -680,6 +715,9 @@ export default function App() {
   const [prefersDark, setPrefersDark] = useState(false);
   const [manualWebIBM, setManualWebIBM] = useState<string>("");
   const [manualWebDell, setManualWebDell] = useState<string>("");
+  const [branding, setBranding] = useState({ appName: "STAR", accentColor: "#2f5da8", logoDataUrl: null as string | null });
+  const [brandingDraft, setBrandingDraft] = useState({ appName: "STAR", accentColor: "#2f5da8", logoDataUrl: null as string | null });
+  const [brandingSaving, setBrandingSaving] = useState(false);
   const ibmRef = useRef<HTMLInputElement | null>(null);
   const dellRef = useRef<HTMLInputElement | null>(null);
   const AUTO_LOGOUT_MINUTES = 10;
@@ -759,6 +797,7 @@ export default function App() {
           apiLoadUsage().catch(e => { console.warn(e); return null; }),
           apiLoadSortPrefs().catch(e => { console.warn(e); return {}; }),
         ]);
+        apiLoadBranding().then((b) => { setBranding(b); setBrandingDraft(b); }).catch(() => {});
         
         if (sortPrefsData && typeof sortPrefsData === 'object') {
           setSortPrefs(sortPrefsData);
@@ -1064,13 +1103,16 @@ const onChangeUsageDell = async (val: string) => {
   return (
     <>
       {!isAuthenticated ? (
-        <Login onLogin={handleLogin} />
+        <Login onLogin={handleLogin} branding={branding} />
       ) : (
         <div className={`min-h-screen ${effectiveDark ? "dark" : ""} bg-gray-100 text-gray-900 dark:bg-gray-950 dark:text-gray-100`}>
           <header className="sticky top-0 z-10 border-b border-gray-200 bg-white/80 backdrop-blur dark:border-gray-800 dark:bg-gray-900/80">
             <div className="mx-auto flex max-w-screen-2xl items-center justify-between px-4 py-3">
               <div className="flex items-center gap-3">
-                <h1 className="text-2xl font-bold tracking-wide dark:text-blue-400" style={{ color: "#2f5da8" }}>STAR</h1>
+                {branding.logoDataUrl && (
+                  <img src={branding.logoDataUrl} alt={branding.appName} className="h-8 object-contain" />
+                )}
+                <h1 className="text-2xl font-bold tracking-wide" style={{ color: branding.accentColor }}>{branding.appName}</h1>
                 {/* Divider + tagline hide on narrower screens so they never crowd the toolbar buttons */}
                 <span className="hidden xl:inline h-5 w-px bg-gray-300 dark:bg-gray-700" />
                 <span className="hidden xl:inline text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">Storage Tracking &amp; Audit Reporting</span>
@@ -1168,7 +1210,7 @@ RULES:
 {showAI && (
   <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
     <div className="flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-gray-900">
-      <div className="flex items-center justify-between bg-gradient-to-r from-[#2f5da8] to-[#1f4294] px-4 py-2.5">
+      <div className="flex items-center justify-between px-4 py-2.5" style={{ background: `linear-gradient(to right, ${branding.accentColor}, ${darkenHex(branding.accentColor)})` }}>
         <h2 className="flex items-center gap-2 text-sm font-semibold text-white">
           <Sparkles className="h-4 w-4" /> STAR Monthly Report
         </h2>
@@ -1250,9 +1292,112 @@ RULES:
           {showSettings && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
               <div className="w-full max-w-4xl rounded-2xl bg-white p-6 shadow-xl dark:bg-gray-900 max-h-[90vh] overflow-hidden flex flex-col">
-                <div className="mb-4 flex items-center justify-between"><div><h2 className="flex items-center gap-2 text-lg font-semibold"><Settings className="h-5 w-5 text-blue-600" />User Management Settings</h2><div className="text-sm text-gray-600 dark:text-gray-400 mt-1">Logged in as: <span className="font-medium text-blue-600 dark:text-blue-400">{currentUser}</span> ({userRole})</div></div><button onClick={() => setShowSettings(false)} className="rounded-md px-2 py-1 text-sm hover:bg-gray-100 dark:hover:bg-gray-800">✕</button></div>
+                <div className="mb-4 flex items-center justify-between"><div><h2 className="flex items-center gap-2 text-lg font-semibold"><Settings className="h-5 w-5" style={{ color: branding.accentColor }} />Settings</h2><div className="text-sm text-gray-600 dark:text-gray-400 mt-1">Logged in as: <span className="font-medium" style={{ color: branding.accentColor }}>{currentUser}</span> ({userRole})</div></div><button onClick={() => setShowSettings(false)} className="rounded-md px-2 py-1 text-sm hover:bg-gray-100 dark:hover:bg-gray-800">✕</button></div>
                 <div className="flex-1 overflow-y-auto">
                   <div className="space-y-6">
+                    {userRole === "admin" && (
+                      <div className="rounded-lg border border-gray-200 p-4 dark:border-gray-700">
+                        <div className="mb-3 flex items-center justify-between">
+                          <h3 className="font-semibold text-gray-900 dark:text-white">Branding</h3>
+                          <div className="flex items-center gap-2">
+                            {(brandingDraft.appName !== branding.appName || brandingDraft.accentColor !== branding.accentColor || brandingDraft.logoDataUrl !== branding.logoDataUrl) && (
+                              <button type="button" onClick={() => setBrandingDraft(branding)} className="rounded-md border border-gray-300 px-3 py-1.5 text-sm hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800">Cancel</button>
+                            )}
+                            <Button
+                              onClick={async () => {
+                                setBrandingSaving(true);
+                                try {
+                                  const saved = await apiSaveBranding(brandingDraft);
+                                  setBranding(saved);
+                                  setBrandingDraft(saved);
+                                  notify("Branding updated.", "ok");
+                                } catch (e: any) {
+                                  notify(e?.message || "Failed to save branding.", "err");
+                                } finally {
+                                  setBrandingSaving(false);
+                                }
+                              }}
+                            >
+                              {brandingSaving ? "Saving..." : "Save Branding"}
+                            </Button>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <label className="mb-1 block text-sm font-medium">App Name</label>
+                            <input
+                              type="text"
+                              value={brandingDraft.appName}
+                              onChange={(e) => setBrandingDraft({ ...brandingDraft, appName: e.target.value })}
+                              maxLength={60}
+                              className="w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-700 dark:bg-gray-800"
+                              placeholder="STAR"
+                            />
+                            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Shown on the login screen and the app header.</p>
+                          </div>
+                          <div>
+                            <label className="mb-1 block text-sm font-medium">Accent Color</label>
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="color"
+                                value={/^#[0-9a-fA-F]{6}$/.test(brandingDraft.accentColor) ? brandingDraft.accentColor : "#2f5da8"}
+                                onChange={(e) => setBrandingDraft({ ...brandingDraft, accentColor: e.target.value })}
+                                className="h-10 w-14 cursor-pointer rounded border border-gray-300 dark:border-gray-700"
+                              />
+                              <input
+                                type="text"
+                                value={brandingDraft.accentColor}
+                                onChange={(e) => setBrandingDraft({ ...brandingDraft, accentColor: e.target.value })}
+                                className="w-full rounded-md border border-gray-300 px-3 py-2 font-mono text-sm dark:border-gray-700 dark:bg-gray-800"
+                                placeholder="#2f5da8"
+                              />
+                            </div>
+                            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Used for the title, login screen, and the AI Summary header.</p>
+                          </div>
+                          <div className="md:col-span-2">
+                            <label className="mb-1 block text-sm font-medium">Logo</label>
+                            <div className="flex items-center gap-4">
+                              <div className="flex h-16 w-16 items-center justify-center rounded-md border border-dashed border-gray-300 dark:border-gray-700">
+                                {brandingDraft.logoDataUrl ? (
+                                  <img src={brandingDraft.logoDataUrl} alt="Logo preview" className="max-h-14 max-w-14 object-contain" />
+                                ) : (
+                                  <Star size={24} className="text-gray-300 dark:text-gray-700" />
+                                )}
+                              </div>
+                              <div className="flex flex-col gap-2">
+                                <input
+                                  type="file"
+                                  accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                                  onChange={(e) => {
+                                    const file = e.target.files?.[0];
+                                    if (!file) return;
+                                    if (file.size > 2_000_000) {
+                                      notify("Logo is too large - please use an image under ~2MB.", "err");
+                                      e.target.value = "";
+                                      return;
+                                    }
+                                    const reader = new FileReader();
+                                    reader.onload = () => setBrandingDraft({ ...brandingDraft, logoDataUrl: String(reader.result) });
+                                    reader.readAsDataURL(file);
+                                  }}
+                                  className="text-sm"
+                                />
+                                {brandingDraft.logoDataUrl && (
+                                  <button
+                                    type="button"
+                                    onClick={() => setBrandingDraft({ ...brandingDraft, logoDataUrl: null })}
+                                    className="self-start text-xs text-red-600 hover:underline dark:text-red-400"
+                                  >
+                                    Remove logo
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">PNG, JPEG, WebP, or SVG. Leave empty to use the default star icon.</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                     <div className="rounded-lg border border-gray-200 p-4 dark:border-gray-700">
                       <div className="mb-3 flex items-center justify-between"><h3 className="font-semibold text-gray-900 dark:text-white">Create New User</h3><Button onClick={async () => { if (!newUser.username || !newUser.password) { notify("Please fill all fields", "warn"); return; } try { const response = await fetch('/api/users', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newUser) }); const data = await response.json(); if (response.ok) { notify(data.message || `User ${newUser.username} created`, "ok"); setNewUser({ username: '', password: '', role: 'user' }); setNewUserShowPassword(false); } else { notify(data.error || "Failed to create user", "err"); } } catch (error: any) { notify("Error: " + (error.message || "Network error"), "err"); } }}>Create User</Button></div>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">

@@ -15,6 +15,7 @@ const USERS_FILE = path.join(DATA_DIR, 'users.json');
 const ROWS_FILE = path.join(DATA_DIR, 'rows.json');
 const USAGE_FILE = path.join(DATA_DIR, 'usage.json');
 const SORT_PREFS_FILE = path.join(DATA_DIR, 'sort-prefs.json');
+const BRANDING_FILE = path.join(DATA_DIR, 'branding.json');
 // Where monthly-report.js (mams-automation/scripts/monthly-report.js) saves
 // each month's Excel export + HTML summary. Read-only from here - this
 // server never writes into it, only lists/serves what that script produced.
@@ -32,6 +33,50 @@ if (!fsSync.existsSync(USERS_FILE)) {
     users: [{ username: "postmams", password: "gma7mams", role: "admin", created_at: new Date().toISOString() }]
   }, null, 2));
 }
+
+// Default branding matches the app's original built-in look, so nothing
+// visually changes until an admin explicitly customizes it via Settings.
+const DEFAULT_BRANDING = { appName: "STAR", accentColor: "#2f5da8", logoDataUrl: null };
+if (!fsSync.existsSync(BRANDING_FILE)) {
+  fsSync.writeFileSync(BRANDING_FILE, JSON.stringify(DEFAULT_BRANDING, null, 2));
+}
+
+// ============ BRANDING API ENDPOINTS ============
+app.get('/api/branding', async (req, res) => {
+  try {
+    const data = JSON.parse(await fs.readFile(BRANDING_FILE, 'utf8'));
+    res.json({ ...DEFAULT_BRANDING, ...data });
+  } catch (err) {
+    res.json(DEFAULT_BRANDING);
+  }
+});
+
+// Bigger JSON body limit on just this route - a base64 logo data URL can
+// easily exceed express.json()'s default 100kb limit used everywhere else.
+app.put('/api/branding', express.json({ limit: '3mb' }), async (req, res) => {
+  const { appName, accentColor, logoDataUrl } = req.body || {};
+  if (typeof appName !== 'string' || !appName.trim() || appName.length > 60) {
+    return res.status(400).json({ error: "App name must be 1-60 characters." });
+  }
+  if (typeof accentColor !== 'string' || !/^#[0-9a-fA-F]{6}$/.test(accentColor)) {
+    return res.status(400).json({ error: "Accent color must be a hex code like #2f5da8." });
+  }
+  if (logoDataUrl !== null && logoDataUrl !== undefined) {
+    if (typeof logoDataUrl !== 'string' || !/^data:image\/(png|jpeg|jpg|svg\+xml|webp);base64,/.test(logoDataUrl)) {
+      return res.status(400).json({ error: "Logo must be a PNG, JPEG, WebP, or SVG image." });
+    }
+    if (logoDataUrl.length > 2_800_000) {
+      return res.status(400).json({ error: "Logo is too large - please use an image under ~2MB." });
+    }
+  }
+  const branding = { appName: appName.trim(), accentColor, logoDataUrl: logoDataUrl || null };
+  try {
+    await fs.writeFile(BRANDING_FILE, JSON.stringify(branding, null, 2));
+    res.json(branding);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to save branding settings." });
+  }
+});
 
 // ============ USER API ENDPOINTS ============
 app.get('/api/users', async (req, res) => {
@@ -553,6 +598,21 @@ app.get('*', (req, res) => {
   if (!req.path.startsWith('/api')) {
     res.sendFile(path.join(__dirname, 'dist', 'index.html'));
   }
+});
+
+// ============ ERROR HANDLER ============
+// Must be registered last (after every route) - Express only routes errors
+// to handlers defined below the point where they occurred. Currently only
+// meaningfully hit by /api/branding's oversized-logo case (body-parser
+// rejects an over-limit request body before any route handler runs), but
+// kept generic so any future payload-size limit gets the same clean
+// JSON error instead of Express's default HTML error page.
+app.use((err, req, res, next) => {
+  if (err && err.type === 'entity.too.large') {
+    return res.status(400).json({ error: "Request body too large." });
+  }
+  console.error('Unhandled error:', err);
+  res.status(500).json({ error: 'Internal server error.' });
 });
 
 app.listen(PORT, '0.0.0.0', () => {
