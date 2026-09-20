@@ -1231,17 +1231,15 @@ const onChangeUsageDell = async (val: string) => {
                   <h1 className="text-2xl font-bold tracking-wide" style={{ color: branding.accentColor }}>{branding.appName}</h1>
                 )}
                 {(branding.taglineImageDataUrl || branding.tagline) && (
-                  // Tagline hides on narrower screens so it never crowds the
-                  // toolbar buttons. No divider before it anymore - the gap
-                  // alone separates it from the name, freeing up the width the
-                  // divider + its own spacing used to take, since the button
-                  // row (never touched here) needs every bit of room it can
-                  // get at tighter window widths.
-                  branding.taglineImageDataUrl ? (
-                    <img src={branding.taglineImageDataUrl} alt={branding.tagline} className="hidden xl:inline h-5 object-contain" />
-                  ) : (
-                    <span className="hidden xl:inline text-base text-gray-500 dark:text-gray-400 whitespace-nowrap">{branding.tagline}</span>
-                  )
+                  <>
+                    {/* Divider + tagline hide on narrower screens so they never crowd the toolbar buttons */}
+                    <span className="hidden xl:inline h-5 w-px bg-gray-300 dark:bg-gray-700" />
+                    {branding.taglineImageDataUrl ? (
+                      <img src={branding.taglineImageDataUrl} alt={branding.tagline} className="hidden xl:inline h-6 object-contain" />
+                    ) : (
+                      <span className="hidden xl:inline text-base text-gray-500 dark:text-gray-400 whitespace-nowrap">{branding.tagline}</span>
+                    )}
+                  </>
                 )}
               </div>
               <div className="flex items-center gap-2 flex-wrap">
