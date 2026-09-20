@@ -69,10 +69,10 @@ function Login({ onLogin, branding }: { onLogin: (username: string, role: string
             <img
               src={branding.logoDataUrl}
               alt={branding.appName}
-              className={branding.logoIncludesText ? "mx-auto mb-1 max-h-40 w-full object-contain" : "mx-auto mb-3 h-14 object-contain"}
+              className={branding.logoIncludesText ? "mx-auto mb-1 max-h-40 w-full object-contain" : "mx-auto mb-3 h-20 object-contain"}
             />
           ) : (
-            <Star size={52} className="mx-auto mb-3" style={{ color: branding.accentColor }} fill="currentColor" strokeLinejoin="round" />
+            <Star size={72} className="mx-auto mb-3" style={{ color: branding.accentColor }} fill="currentColor" strokeLinejoin="round" />
           )}
           {/* Only the name is skipped when the logo already includes it - the
               tagline is independent and always shows when set, regardless of
@@ -87,10 +87,10 @@ function Login({ onLogin, branding }: { onLogin: (username: string, role: string
             )
           )}
           {branding.taglineImageDataUrl ? (
-            <img src={branding.taglineImageDataUrl} alt={branding.tagline} className="mx-auto mt-2 h-5 object-contain" />
+            <img src={branding.taglineImageDataUrl} alt={branding.tagline} className="mx-auto mt-2 h-6 object-contain" />
           ) : (
             branding.tagline && (
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-2 whitespace-nowrap">{branding.tagline}</p>
+              <p className="text-base text-gray-500 dark:text-gray-400 mt-2 whitespace-nowrap">{branding.tagline}</p>
             )
           )}
         </div>
