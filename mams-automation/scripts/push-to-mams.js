@@ -12,17 +12,14 @@
 //   node push-to-mams.js COMP /Users/postmams/Documents/scripts/audit_storage/data/COMP.csv
 //
 // Config:
-//   Set MAMS_API_URL to the VM's address before calling, e.g.:
-//     export MAMS_API_URL=http://192.168.20.21:5179
-//   (192.168.20.21 shows up in your Finder sidebar as a mounted location,
-//   which looks like it could be the VM - confirm the right IP/port and
-//   either export it in the crontab or edit the default below.)
+//   Set MAMS_API_URL to override the default below, e.g.:
+//     export MAMS_API_URL=http://10.0.1.50:8104
 
 const fs = require("fs");
 const http = require("http");
 const https = require("https");
 
-const API_URL = process.env.MAMS_API_URL || "http://192.168.20.21:5179";
+const API_URL = process.env.MAMS_API_URL || "http://10.0.1.50:8104";
 const BYTES_PER_GB = 1024 ** 3;
 
 // ---- ported from the app's parsing rules (src/App.tsx) ----
@@ -111,6 +108,29 @@ function putJson(urlStr, body) {
   });
 }
 
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+// Wraps putJson with a few retries on network-level failures (a momentary
+// EHOSTUNREACH/ETIMEDOUT/ECONNREFUSED blip, seen in practice on this Mac's
+// path to the VM, shouldn't require manually re-running the whole audit).
+// Does NOT retry on a real HTTP error response (4xx/5xx) - those are
+// application-level failures a retry won't fix.
+async function putJsonWithRetry(urlStr, body, attempts = 3, delayMs = 3000) {
+  let lastErr;
+  for (let i = 1; i <= attempts; i++) {
+    try {
+      return await putJson(urlStr, body);
+    } catch (err) {
+      lastErr = err;
+      const isNetworkError = /^HTTP \d/.test(err.message) === false;
+      if (!isNetworkError || i === attempts) throw err;
+      console.error(`Attempt ${i}/${attempts} failed (${err.message}), retrying in ${delayMs / 1000}s...`);
+      await sleep(delayMs);
+    }
+  }
+  throw lastErr;
+}
+
 async function main() {
   const [, , side, filePath] = process.argv;
   if (!side || !filePath || !["IBM", "COMP"].includes(side)) {
@@ -130,7 +150,7 @@ async function main() {
     process.exit(1);
   }
 
-  await putJson(`${API_URL}/api/rows`, { side, data: rows });
+  await putJsonWithRetry(`${API_URL}/api/rows`, { side, data: rows });
   console.log(`[${new Date().toISOString()}] Pushed ${rows.length} rows for ${side} from ${filePath}`);
 }
 
