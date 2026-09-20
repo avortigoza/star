@@ -1360,8 +1360,9 @@ RULES:
                         <div className="mb-3 flex items-center justify-between">
                           <h3 className="font-semibold text-gray-900 dark:text-white">Branding</h3>
                           <div className="flex items-center gap-2">
-                            <button
+                            <Button
                               type="button"
+                              variant="outline"
                               onClick={async () => {
                                 if (!window.confirm("Restore branding to the default STAR logo, name, and color? This can't be undone.")) return;
                                 setBrandingResetting(true);
@@ -1376,10 +1377,10 @@ RULES:
                                   setBrandingResetting(false);
                                 }
                               }}
-                              className="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-800"
+                              className="text-gray-600 dark:text-gray-400"
                             >
                               {brandingResetting ? "Restoring..." : "Restore to Default"}
-                            </button>
+                            </Button>
                             {(brandingDraft.appName !== branding.appName || brandingDraft.tagline !== branding.tagline || brandingDraft.accentColor !== branding.accentColor || brandingDraft.logoDataUrl !== branding.logoDataUrl || brandingDraft.logoIncludesText !== branding.logoIncludesText) && (
                               <button type="button" onClick={() => setBrandingDraft(branding)} className="rounded-md border border-gray-300 px-3 py-1.5 text-sm hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800">Cancel</button>
                             )}
