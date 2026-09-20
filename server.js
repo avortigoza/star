@@ -40,7 +40,7 @@ if (!fsSync.existsSync(USERS_FILE)) {
 
 // Default branding matches the app's original built-in look, so nothing
 // visually changes until an admin explicitly customizes it via Settings.
-const DEFAULT_BRANDING = { appName: "STAR", accentColor: "#2f5da8", logoDataUrl: null, logoIncludesText: false };
+const DEFAULT_BRANDING = { appName: "STAR", accentColor: "#2f5da8", tagline: "Storage Tracking & Audit Reporting", logoDataUrl: null, logoIncludesText: false };
 if (!fsSync.existsSync(BRANDING_FILE)) {
   fsSync.writeFileSync(BRANDING_FILE, JSON.stringify(DEFAULT_BRANDING, null, 2));
 }
@@ -56,12 +56,16 @@ app.get('/api/branding', async (req, res) => {
 });
 
 app.put('/api/branding', async (req, res) => {
-  const { appName, accentColor, logoDataUrl, logoIncludesText } = req.body || {};
+  const { appName, accentColor, tagline, logoDataUrl, logoIncludesText } = req.body || {};
   if (typeof appName !== 'string' || !appName.trim() || appName.length > 60) {
     return res.status(400).json({ error: "App name must be 1-60 characters." });
   }
   if (typeof accentColor !== 'string' || !/^#[0-9a-fA-F]{6}$/.test(accentColor)) {
     return res.status(400).json({ error: "Accent color must be a hex code like #2f5da8." });
+  }
+  // Tagline is optional (admins may want none at all), unlike app name.
+  if (tagline !== undefined && (typeof tagline !== 'string' || tagline.length > 100)) {
+    return res.status(400).json({ error: "Tagline must be 100 characters or fewer." });
   }
   if (logoDataUrl !== null && logoDataUrl !== undefined) {
     if (typeof logoDataUrl !== 'string' || !/^data:image\/(png|jpeg|jpg|svg\+xml|webp);base64,/.test(logoDataUrl)) {
@@ -74,6 +78,7 @@ app.put('/api/branding', async (req, res) => {
   const branding = {
     appName: appName.trim(),
     accentColor,
+    tagline: typeof tagline === 'string' ? tagline.trim() : '',
     logoDataUrl: logoDataUrl || null,
     logoIncludesText: logoIncludesText === true,
   };

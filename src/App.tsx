@@ -22,7 +22,7 @@ type Bucket = { label: string; prefix: string; exclude?: string[]; skipExact?: b
 // =============================
 // Login Component
 // =============================
-function Login({ onLogin, branding }: { onLogin: (username: string, role: string) => void; branding: { appName: string; accentColor: string; logoDataUrl: string | null; logoIncludesText: boolean } }) {
+function Login({ onLogin, branding }: { onLogin: (username: string, role: string) => void; branding: { appName: string; accentColor: string; tagline: string; logoDataUrl: string | null; logoIncludesText: boolean } }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -65,20 +65,22 @@ function Login({ onLogin, branding }: { onLogin: (username: string, role: string
     <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-950">
       <form onSubmit={submit} className="w-96 rounded-2xl bg-white dark:bg-gray-900 p-8 shadow-lg flex flex-col gap-4">
         <div className="text-center mb-2">
-          {branding.logoDataUrl && branding.logoIncludesText ? (
-            // Logo already has the app name/tagline baked in - show it alone,
-            // larger, instead of duplicating text next to it.
-            <img src={branding.logoDataUrl} alt={branding.appName} className="mx-auto mb-1 max-h-40 w-full object-contain" />
+          {branding.logoDataUrl ? (
+            <img
+              src={branding.logoDataUrl}
+              alt={branding.appName}
+              className={branding.logoIncludesText ? "mx-auto mb-1 max-h-40 w-full object-contain" : "mx-auto mb-3 h-14 object-contain"}
+            />
           ) : (
-            <>
-              {branding.logoDataUrl ? (
-                <img src={branding.logoDataUrl} alt={branding.appName} className="mx-auto mb-3 h-14 object-contain" />
-              ) : (
-                <Star size={52} className="mx-auto mb-3" style={{ color: branding.accentColor }} fill="currentColor" strokeLinejoin="round" />
-              )}
-              <h2 className="text-4xl font-bold tracking-wide" style={{ color: branding.accentColor }}>{branding.appName}</h2>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-2 whitespace-nowrap">Storage Tracking &amp; Audit Reporting</p>
-            </>
+            <Star size={52} className="mx-auto mb-3" style={{ color: branding.accentColor }} fill="currentColor" strokeLinejoin="round" />
+          )}
+          {/* Only the name is skipped when the logo already includes it - the
+              tagline is independent and always shows when set. */}
+          {!branding.logoIncludesText && (
+            <h2 className="text-4xl font-bold tracking-wide" style={{ color: branding.accentColor }}>{branding.appName}</h2>
+          )}
+          {branding.tagline && (
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-2 whitespace-nowrap">{branding.tagline}</p>
           )}
         </div>
         {error && <div className="rounded-md bg-red-50 dark:bg-red-900/30 p-3 text-sm text-red-800 dark:text-red-300">{error}</div>}
@@ -658,11 +660,11 @@ async function apiLoadBranding() {
     return await r.json();
   } catch (error) {
     console.warn("apiLoadBranding error, using defaults:", error);
-    return { appName: "STAR", accentColor: "#2f5da8", logoDataUrl: null, logoIncludesText: false };
+    return { appName: "STAR", accentColor: "#2f5da8", tagline: "Storage Tracking & Audit Reporting", logoDataUrl: null, logoIncludesText: false };
   }
 }
 
-async function apiSaveBranding(branding: { appName: string; accentColor: string; logoDataUrl: string | null; logoIncludesText: boolean }) {
+async function apiSaveBranding(branding: { appName: string; accentColor: string; tagline: string; logoDataUrl: string | null; logoIncludesText: boolean }) {
   const r = await fetch(`${API}/branding`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(branding) });
   const data = await r.json().catch(() => ({}));
   if (!r.ok) throw new Error(data.error || "Save branding failed");
@@ -730,8 +732,8 @@ export default function App() {
   const [prefersDark, setPrefersDark] = useState(false);
   const [manualWebIBM, setManualWebIBM] = useState<string>("");
   const [manualWebDell, setManualWebDell] = useState<string>("");
-  const [branding, setBranding] = useState({ appName: "STAR", accentColor: "#2f5da8", logoDataUrl: null as string | null, logoIncludesText: false });
-  const [brandingDraft, setBrandingDraft] = useState({ appName: "STAR", accentColor: "#2f5da8", logoDataUrl: null as string | null, logoIncludesText: false });
+  const [branding, setBranding] = useState({ appName: "STAR", accentColor: "#2f5da8", tagline: "Storage Tracking & Audit Reporting", logoDataUrl: null as string | null, logoIncludesText: false });
+  const [brandingDraft, setBrandingDraft] = useState({ appName: "STAR", accentColor: "#2f5da8", tagline: "Storage Tracking & Audit Reporting", logoDataUrl: null as string | null, logoIncludesText: false });
   const [brandingSaving, setBrandingSaving] = useState(false);
   const [brandingResetting, setBrandingResetting] = useState(false);
   const ibmRef = useRef<HTMLInputElement | null>(null);
@@ -1133,18 +1135,23 @@ const onChangeUsageDell = async (val: string) => {
           <header className="sticky top-0 z-10 border-b border-gray-200 bg-white/80 backdrop-blur dark:border-gray-800 dark:bg-gray-900/80">
             <div className="mx-auto flex max-w-screen-2xl items-center justify-between px-4 py-3">
               <div className="flex items-center gap-3">
-                {branding.logoDataUrl && branding.logoIncludesText ? (
-                  // Logo already has the app name/tagline baked in - don't duplicate that text.
-                  <img src={branding.logoDataUrl} alt={branding.appName} className="h-10 object-contain" />
-                ) : (
+                {branding.logoDataUrl && (
+                  <img
+                    src={branding.logoDataUrl}
+                    alt={branding.appName}
+                    className={branding.logoIncludesText ? "h-10 object-contain" : "h-8 object-contain"}
+                  />
+                )}
+                {/* Only the name is skipped when the logo already includes it -
+                    the tagline is independent and always shows next to it. */}
+                {!branding.logoIncludesText && (
+                  <h1 className="text-2xl font-bold tracking-wide" style={{ color: branding.accentColor }}>{branding.appName}</h1>
+                )}
+                {branding.tagline && (
                   <>
-                    {branding.logoDataUrl && (
-                      <img src={branding.logoDataUrl} alt={branding.appName} className="h-8 object-contain" />
-                    )}
-                    <h1 className="text-2xl font-bold tracking-wide" style={{ color: branding.accentColor }}>{branding.appName}</h1>
                     {/* Divider + tagline hide on narrower screens so they never crowd the toolbar buttons */}
                     <span className="hidden xl:inline h-5 w-px bg-gray-300 dark:bg-gray-700" />
-                    <span className="hidden xl:inline text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">Storage Tracking &amp; Audit Reporting</span>
+                    <span className="hidden xl:inline text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">{branding.tagline}</span>
                   </>
                 )}
               </div>
@@ -1351,7 +1358,7 @@ RULES:
                             >
                               {brandingResetting ? "Restoring..." : "Restore to Default"}
                             </button>
-                            {(brandingDraft.appName !== branding.appName || brandingDraft.accentColor !== branding.accentColor || brandingDraft.logoDataUrl !== branding.logoDataUrl || brandingDraft.logoIncludesText !== branding.logoIncludesText) && (
+                            {(brandingDraft.appName !== branding.appName || brandingDraft.tagline !== branding.tagline || brandingDraft.accentColor !== branding.accentColor || brandingDraft.logoDataUrl !== branding.logoDataUrl || brandingDraft.logoIncludesText !== branding.logoIncludesText) && (
                               <button type="button" onClick={() => setBrandingDraft(branding)} className="rounded-md border border-gray-300 px-3 py-1.5 text-sm hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800">Cancel</button>
                             )}
                             <Button
@@ -1385,6 +1392,18 @@ RULES:
                               placeholder="STAR"
                             />
                             <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Shown on the login screen and the app header.</p>
+                          </div>
+                          <div>
+                            <label className="mb-1 block text-sm font-medium">Tagline</label>
+                            <input
+                              type="text"
+                              value={brandingDraft.tagline}
+                              onChange={(e) => setBrandingDraft({ ...brandingDraft, tagline: e.target.value })}
+                              maxLength={100}
+                              className="w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-700 dark:bg-gray-800"
+                              placeholder="Storage Tracking & Audit Reporting"
+                            />
+                            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Shown next to the app name. Leave blank for none - unlike App Name, this always shows even when your logo already includes the app name.</p>
                           </div>
                           <div>
                             <label className="mb-1 block text-sm font-medium">Accent Color</label>
