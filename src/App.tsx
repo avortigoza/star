@@ -1152,6 +1152,10 @@ const onChangeUsageDell = async (val: string) => {
   const ibmBuckets = getBuckets("IBM");
   const dellBuckets = getBuckets("Dell");
   const effectiveDark = theme === "system" ? prefersDark : theme === "dark";
+  // Same rule as the login screen: bigger sizing only once real custom
+  // branding assets are set, so "Restore to Default" (which nulls all
+  // three) brings back the original, already-correct proportions.
+  const isCustomBranding = !!(branding.logoDataUrl || branding.appNameImageDataUrl || branding.taglineImageDataUrl);
 
   const [ibmRowsUpdated, setIbmRowsUpdated] = useState<string | null>(null);
   const [compRowsUpdated, setCompRowsUpdated] = useState<string | null>(null);
@@ -1217,7 +1221,7 @@ const onChangeUsageDell = async (val: string) => {
       ) : (
         <div className={`min-h-screen ${effectiveDark ? "dark" : ""} bg-gray-100 text-gray-900 dark:bg-gray-950 dark:text-gray-100`}>
           <header className="sticky top-0 z-10 border-b border-gray-200 bg-white/80 backdrop-blur dark:border-gray-800 dark:bg-gray-900/80">
-            <div className="mx-auto flex max-w-screen-2xl items-center justify-between px-4 py-3">
+            <div className="mx-auto flex max-w-screen-2xl items-center justify-between gap-3 px-4 py-3">
               <div className="flex items-center gap-3">
                 {/* No logo in the header by design - just the name/tagline, kept
                     compact for the toolbar row. The logo still shows on the
@@ -1237,7 +1241,7 @@ const onChangeUsageDell = async (val: string) => {
                     {branding.taglineImageDataUrl ? (
                       <img src={branding.taglineImageDataUrl} alt={branding.tagline} className="hidden xl:inline h-5 object-contain" />
                     ) : (
-                      <span className="hidden xl:inline text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">{branding.tagline}</span>
+                      <span className={`hidden xl:inline text-gray-500 dark:text-gray-400 whitespace-nowrap ${isCustomBranding ? "text-base" : "text-sm"}`}>{branding.tagline}</span>
                     )}
                   </>
                 )}
