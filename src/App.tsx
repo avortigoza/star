@@ -28,6 +28,11 @@ function Login({ onLogin, branding }: { onLogin: (username: string, role: string
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  // "Restore to Default" resets every custom image field to null - only
+  // once any of them is actually set does the deliberately-larger sizing
+  // apply. The plain default STAR wordmark/tagline (no custom images at
+  // all) keeps its original, already-correct proportions.
+  const isCustomBranding = !!(branding.logoDataUrl || branding.appNameImageDataUrl || branding.taglineImageDataUrl);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,7 +77,7 @@ function Login({ onLogin, branding }: { onLogin: (username: string, role: string
               className={branding.logoIncludesText ? "mx-auto mb-1 max-h-40 w-full object-contain" : "mx-auto mb-3 h-20 object-contain"}
             />
           ) : (
-            <Star size={72} className="mx-auto mb-3" style={{ color: branding.accentColor }} fill="currentColor" strokeLinejoin="round" />
+            <Star size={52} className="mx-auto mb-3" style={{ color: branding.accentColor }} fill="currentColor" strokeLinejoin="round" />
           )}
           {/* Only the name is skipped when the logo already includes it - the
               tagline is independent and always shows when set, regardless of
@@ -90,7 +95,7 @@ function Login({ onLogin, branding }: { onLogin: (username: string, role: string
             <img src={branding.taglineImageDataUrl} alt={branding.tagline} className="mx-auto mt-2 h-6 object-contain" />
           ) : (
             branding.tagline && (
-              <p className="text-base text-gray-500 dark:text-gray-400 mt-2 whitespace-nowrap">{branding.tagline}</p>
+              <p className={`text-gray-500 dark:text-gray-400 mt-2 whitespace-nowrap ${isCustomBranding ? "text-base" : "text-sm"}`}>{branding.tagline}</p>
             )
           )}
         </div>
@@ -1147,6 +1152,10 @@ const onChangeUsageDell = async (val: string) => {
   const ibmBuckets = getBuckets("IBM");
   const dellBuckets = getBuckets("Dell");
   const effectiveDark = theme === "system" ? prefersDark : theme === "dark";
+  // Same rule as the login screen: bigger sizing only once real custom
+  // branding assets are set, so "Restore to Default" (which nulls all
+  // three) brings back the original, already-correct proportions.
+  const isCustomBranding = !!(branding.logoDataUrl || branding.appNameImageDataUrl || branding.taglineImageDataUrl);
 
   const [ibmRowsUpdated, setIbmRowsUpdated] = useState<string | null>(null);
   const [compRowsUpdated, setCompRowsUpdated] = useState<string | null>(null);
@@ -1232,7 +1241,7 @@ const onChangeUsageDell = async (val: string) => {
                     {branding.taglineImageDataUrl ? (
                       <img src={branding.taglineImageDataUrl} alt={branding.tagline} className="hidden xl:inline h-5 object-contain" />
                     ) : (
-                      <span className="hidden xl:inline text-base text-gray-500 dark:text-gray-400 whitespace-nowrap">{branding.tagline}</span>
+                      <span className={`hidden xl:inline text-gray-500 dark:text-gray-400 whitespace-nowrap ${isCustomBranding ? "text-base" : "text-sm"}`}>{branding.tagline}</span>
                     )}
                   </>
                 )}
