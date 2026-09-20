@@ -36,7 +36,7 @@ if (!fsSync.existsSync(USERS_FILE)) {
 
 // Default branding matches the app's original built-in look, so nothing
 // visually changes until an admin explicitly customizes it via Settings.
-const DEFAULT_BRANDING = { appName: "STAR", accentColor: "#2f5da8", logoDataUrl: null };
+const DEFAULT_BRANDING = { appName: "STAR", accentColor: "#2f5da8", logoDataUrl: null, logoIncludesText: false };
 if (!fsSync.existsSync(BRANDING_FILE)) {
   fsSync.writeFileSync(BRANDING_FILE, JSON.stringify(DEFAULT_BRANDING, null, 2));
 }
@@ -54,7 +54,7 @@ app.get('/api/branding', async (req, res) => {
 // Bigger JSON body limit on just this route - a base64 logo data URL can
 // easily exceed express.json()'s default 100kb limit used everywhere else.
 app.put('/api/branding', express.json({ limit: '3mb' }), async (req, res) => {
-  const { appName, accentColor, logoDataUrl } = req.body || {};
+  const { appName, accentColor, logoDataUrl, logoIncludesText } = req.body || {};
   if (typeof appName !== 'string' || !appName.trim() || appName.length > 60) {
     return res.status(400).json({ error: "App name must be 1-60 characters." });
   }
@@ -69,12 +69,26 @@ app.put('/api/branding', express.json({ limit: '3mb' }), async (req, res) => {
       return res.status(400).json({ error: "Logo is too large - please use an image under ~2MB." });
     }
   }
-  const branding = { appName: appName.trim(), accentColor, logoDataUrl: logoDataUrl || null };
+  const branding = {
+    appName: appName.trim(),
+    accentColor,
+    logoDataUrl: logoDataUrl || null,
+    logoIncludesText: logoIncludesText === true,
+  };
   try {
     await fs.writeFile(BRANDING_FILE, JSON.stringify(branding, null, 2));
     res.json(branding);
   } catch (err) {
     res.status(500).json({ error: "Failed to save branding settings." });
+  }
+});
+
+app.post('/api/branding/reset', async (req, res) => {
+  try {
+    await fs.writeFile(BRANDING_FILE, JSON.stringify(DEFAULT_BRANDING, null, 2));
+    res.json(DEFAULT_BRANDING);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to reset branding settings." });
   }
 });
 
