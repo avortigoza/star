@@ -1230,9 +1230,9 @@ const onChangeUsageDell = async (val: string) => {
                     {/* Divider + tagline hide on narrower screens so they never crowd the toolbar buttons */}
                     <span className="hidden xl:inline mx-1 h-5 w-px bg-gray-300 dark:bg-gray-700" />
                     {branding.taglineImageDataUrl ? (
-                      <img src={branding.taglineImageDataUrl} alt={branding.tagline} className="hidden xl:inline h-4 object-contain" />
+                      <img src={branding.taglineImageDataUrl} alt={branding.tagline} className="hidden xl:inline h-5 object-contain" />
                     ) : (
-                      <span className="hidden xl:inline text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">{branding.tagline}</span>
+                      <span className="hidden xl:inline text-base text-gray-500 dark:text-gray-400 whitespace-nowrap">{branding.tagline}</span>
                     )}
                   </>
                 )}
