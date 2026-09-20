@@ -7,6 +7,7 @@ services:
       - "5179:5179"
     volumes:
       - ./data:/var/www/mams-storage-audit/data
+      - ./mams-automation/reports:/var/www/mams-storage-audit/mams-automation/reports
     environment:
       - NODE_ENV=production
       - PORT=5179
