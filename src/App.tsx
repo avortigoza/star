@@ -22,7 +22,7 @@ type Bucket = { label: string; prefix: string; exclude?: string[]; skipExact?: b
 // =============================
 // Login Component
 // =============================
-function Login({ onLogin, branding }: { onLogin: (username: string, role: string) => void; branding: { appName: string; accentColor: string; tagline: string; logoDataUrl: string | null; logoIncludesText: boolean } }) {
+function Login({ onLogin, branding }: { onLogin: (username: string, role: string) => void; branding: { appName: string; accentColor: string; tagline: string; logoDataUrl: string | null; logoIncludesText: boolean; appNameImageDataUrl: string | null; taglineImageDataUrl: string | null } }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -75,12 +75,23 @@ function Login({ onLogin, branding }: { onLogin: (username: string, role: string
             <Star size={52} className="mx-auto mb-3" style={{ color: branding.accentColor }} fill="currentColor" strokeLinejoin="round" />
           )}
           {/* Only the name is skipped when the logo already includes it - the
-              tagline is independent and always shows when set. */}
+              tagline is independent and always shows when set, regardless of
+              logoIncludesText (matches the header's same behavior). Each of
+              name and tagline can independently be a designed image instead
+              of plain text - the image takes over whenever it's set. */}
           {!branding.logoIncludesText && (
-            <h2 className="text-4xl font-bold tracking-wide" style={{ color: branding.accentColor }}>{branding.appName}</h2>
+            branding.appNameImageDataUrl ? (
+              <img src={branding.appNameImageDataUrl} alt={branding.appName} className="mx-auto h-10 object-contain" />
+            ) : (
+              <h2 className="text-4xl font-bold tracking-wide" style={{ color: branding.accentColor }}>{branding.appName}</h2>
+            )
           )}
-          {branding.tagline && (
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-2 whitespace-nowrap">{branding.tagline}</p>
+          {branding.taglineImageDataUrl ? (
+            <img src={branding.taglineImageDataUrl} alt={branding.tagline} className="mx-auto mt-2 h-5 object-contain" />
+          ) : (
+            branding.tagline && (
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-2 whitespace-nowrap">{branding.tagline}</p>
+            )
           )}
         </div>
         {error && <div className="rounded-md bg-red-50 dark:bg-red-900/30 p-3 text-sm text-red-800 dark:text-red-300">{error}</div>}
@@ -660,11 +671,11 @@ async function apiLoadBranding() {
     return await r.json();
   } catch (error) {
     console.warn("apiLoadBranding error, using defaults:", error);
-    return { appName: "STAR", accentColor: "#2f5da8", tagline: "Storage Tracking & Audit Reporting", logoDataUrl: null, logoIncludesText: false };
+    return { appName: "STAR", accentColor: "#2f5da8", tagline: "Storage Tracking & Audit Reporting", logoDataUrl: null, logoIncludesText: false, appNameImageDataUrl: null, taglineImageDataUrl: null };
   }
 }
 
-async function apiSaveBranding(branding: { appName: string; accentColor: string; tagline: string; logoDataUrl: string | null; logoIncludesText: boolean }) {
+async function apiSaveBranding(branding: { appName: string; accentColor: string; tagline: string; logoDataUrl: string | null; logoIncludesText: boolean; appNameImageDataUrl: string | null; taglineImageDataUrl: string | null }) {
   const r = await fetch(`${API}/branding`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(branding) });
   const data = await r.json().catch(() => ({}));
   if (!r.ok) throw new Error(data.error || "Save branding failed");
@@ -732,8 +743,8 @@ export default function App() {
   const [prefersDark, setPrefersDark] = useState(false);
   const [manualWebIBM, setManualWebIBM] = useState<string>("");
   const [manualWebDell, setManualWebDell] = useState<string>("");
-  const [branding, setBranding] = useState({ appName: "STAR", accentColor: "#2f5da8", tagline: "Storage Tracking & Audit Reporting", logoDataUrl: null as string | null, logoIncludesText: false });
-  const [brandingDraft, setBrandingDraft] = useState({ appName: "STAR", accentColor: "#2f5da8", tagline: "Storage Tracking & Audit Reporting", logoDataUrl: null as string | null, logoIncludesText: false });
+  const [branding, setBranding] = useState({ appName: "STAR", accentColor: "#2f5da8", tagline: "Storage Tracking & Audit Reporting", logoDataUrl: null as string | null, logoIncludesText: false, appNameImageDataUrl: null as string | null, taglineImageDataUrl: null as string | null });
+  const [brandingDraft, setBrandingDraft] = useState({ appName: "STAR", accentColor: "#2f5da8", tagline: "Storage Tracking & Audit Reporting", logoDataUrl: null as string | null, logoIncludesText: false, appNameImageDataUrl: null as string | null, taglineImageDataUrl: null as string | null });
   const [brandingSaving, setBrandingSaving] = useState(false);
   const [brandingResetting, setBrandingResetting] = useState(false);
   const ibmRef = useRef<HTMLInputElement | null>(null);
@@ -1009,6 +1020,52 @@ const onChangeUsageDell = async (val: string) => {
   };
 
   // ===== Export Excel =====
+  // Shared rendering + upload/validation logic for every branding image
+  // field (Logo, App Name image, Tagline image) - a plain function called
+  // inline (never used as a JSX tag like <ImageUploadField/>), so it's not
+  // its own component and can't trigger React's remount-on-re-render
+  // behavior that defining a new component function inside a render body
+  // would cause; it just closes over notify/brandingDraft normally.
+  const brandingImageField = (opts: { label: string; value: string | null; onChange: (dataUrl: string | null) => void; help: string }) => (
+    <div>
+      <label className="mb-1 block text-sm font-medium">{opts.label}</label>
+      <div className="flex items-center gap-4">
+        <div className="flex h-16 w-16 items-center justify-center rounded-md border border-dashed border-gray-300 dark:border-gray-700">
+          {opts.value ? (
+            <img src={opts.value} alt={`${opts.label} preview`} className="max-h-14 max-w-14 object-contain" />
+          ) : (
+            <Star size={24} className="text-gray-300 dark:text-gray-700" />
+          )}
+        </div>
+        <div className="flex flex-col gap-2">
+          <input
+            type="file"
+            accept="image/png,image/jpeg,image/webp,image/svg+xml"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (!file) return;
+              if (file.size > 2_000_000) {
+                notify(`${opts.label} is too large - please use an image under ~2MB.`, "err");
+                e.target.value = "";
+                return;
+              }
+              const reader = new FileReader();
+              reader.onload = () => opts.onChange(String(reader.result));
+              reader.readAsDataURL(file);
+            }}
+            className="text-sm"
+          />
+          {opts.value && (
+            <button type="button" onClick={() => opts.onChange(null)} className="self-start text-xs text-red-600 hover:underline dark:text-red-400">
+              Remove {opts.label.toLowerCase()}
+            </button>
+          )}
+        </div>
+      </div>
+      <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{opts.help}</p>
+    </div>
+  );
+
   const exportExcel = () => {
     try {
       const capIbm = 660, capDell = 440;
@@ -1165,15 +1222,26 @@ const onChangeUsageDell = async (val: string) => {
                   />
                 )}
                 {/* Only the name is skipped when the logo already includes it -
-                    the tagline is independent and always shows next to it. */}
+                    the tagline is independent and always shows next to it.
+                    Each of name and tagline can independently be a designed
+                    image instead of plain text - the image takes over
+                    whenever it's set. */}
                 {!branding.logoIncludesText && (
-                  <h1 className="text-2xl font-bold tracking-wide" style={{ color: branding.accentColor }}>{branding.appName}</h1>
+                  branding.appNameImageDataUrl ? (
+                    <img src={branding.appNameImageDataUrl} alt={branding.appName} className="h-6 object-contain" />
+                  ) : (
+                    <h1 className="text-2xl font-bold tracking-wide" style={{ color: branding.accentColor }}>{branding.appName}</h1>
+                  )
                 )}
-                {branding.tagline && (
+                {(branding.taglineImageDataUrl || branding.tagline) && (
                   <>
                     {/* Divider + tagline hide on narrower screens so they never crowd the toolbar buttons */}
                     <span className="hidden xl:inline h-5 w-px bg-gray-300 dark:bg-gray-700" />
-                    <span className="hidden xl:inline text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">{branding.tagline}</span>
+                    {branding.taglineImageDataUrl ? (
+                      <img src={branding.taglineImageDataUrl} alt={branding.tagline} className="hidden xl:inline h-4 object-contain" />
+                    ) : (
+                      <span className="hidden xl:inline text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">{branding.tagline}</span>
+                    )}
                   </>
                 )}
               </div>
@@ -1381,7 +1449,7 @@ RULES:
                             >
                               {brandingResetting ? "Restoring..." : "Restore to Default"}
                             </Button>
-                            {(brandingDraft.appName !== branding.appName || brandingDraft.tagline !== branding.tagline || brandingDraft.accentColor !== branding.accentColor || brandingDraft.logoDataUrl !== branding.logoDataUrl || brandingDraft.logoIncludesText !== branding.logoIncludesText) && (
+                            {(brandingDraft.appName !== branding.appName || brandingDraft.tagline !== branding.tagline || brandingDraft.accentColor !== branding.accentColor || brandingDraft.logoDataUrl !== branding.logoDataUrl || brandingDraft.logoIncludesText !== branding.logoIncludesText || brandingDraft.appNameImageDataUrl !== branding.appNameImageDataUrl || brandingDraft.taglineImageDataUrl !== branding.taglineImageDataUrl) && (
                               <button type="button" onClick={() => setBrandingDraft(branding)} className="rounded-md border border-gray-300 px-3 py-1.5 text-sm hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800">Cancel</button>
                             )}
                             <Button
@@ -1448,45 +1516,12 @@ RULES:
                             <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Used for the title, login screen, and the AI Summary header.</p>
                           </div>
                           <div className="md:col-span-2">
-                            <label className="mb-1 block text-sm font-medium">Logo</label>
-                            <div className="flex items-center gap-4">
-                              <div className="flex h-16 w-16 items-center justify-center rounded-md border border-dashed border-gray-300 dark:border-gray-700">
-                                {brandingDraft.logoDataUrl ? (
-                                  <img src={brandingDraft.logoDataUrl} alt="Logo preview" className="max-h-14 max-w-14 object-contain" />
-                                ) : (
-                                  <Star size={24} className="text-gray-300 dark:text-gray-700" />
-                                )}
-                              </div>
-                              <div className="flex flex-col gap-2">
-                                <input
-                                  type="file"
-                                  accept="image/png,image/jpeg,image/webp,image/svg+xml"
-                                  onChange={(e) => {
-                                    const file = e.target.files?.[0];
-                                    if (!file) return;
-                                    if (file.size > 2_000_000) {
-                                      notify("Logo is too large - please use an image under ~2MB.", "err");
-                                      e.target.value = "";
-                                      return;
-                                    }
-                                    const reader = new FileReader();
-                                    reader.onload = () => setBrandingDraft({ ...brandingDraft, logoDataUrl: String(reader.result) });
-                                    reader.readAsDataURL(file);
-                                  }}
-                                  className="text-sm"
-                                />
-                                {brandingDraft.logoDataUrl && (
-                                  <button
-                                    type="button"
-                                    onClick={() => setBrandingDraft({ ...brandingDraft, logoDataUrl: null })}
-                                    className="self-start text-xs text-red-600 hover:underline dark:text-red-400"
-                                  >
-                                    Remove logo
-                                  </button>
-                                )}
-                              </div>
-                            </div>
-                            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">PNG, JPEG, WebP, or SVG. Leave empty to use the default star icon.</p>
+                            {brandingImageField({
+                              label: "Logo",
+                              value: brandingDraft.logoDataUrl,
+                              onChange: (v) => setBrandingDraft({ ...brandingDraft, logoDataUrl: v }),
+                              help: "PNG, JPEG, WebP, or SVG. Leave empty to use the default star icon.",
+                            })}
                             {brandingDraft.logoDataUrl && (
                               <label className="mt-2 flex items-center gap-2 text-sm">
                                 <input
@@ -1495,12 +1530,30 @@ RULES:
                                   onChange={(e) => setBrandingDraft({ ...brandingDraft, logoIncludesText: e.target.checked })}
                                   className="rounded border-gray-300 dark:border-gray-700"
                                 />
-                                My logo already includes the app name and tagline
+                                My logo already includes the app name
                               </label>
                             )}
                             {brandingDraft.logoDataUrl && brandingDraft.logoIncludesText && (
-                              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">The App Name field above will still be used for the browser tab title, but won't be shown next to the logo.</p>
+                              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">The App Name field above will still be used for the browser tab title, but won't be shown next to the logo. The Tagline (text or image, below) is unaffected and still shows next to it either way.</p>
                             )}
+                          </div>
+                          {!brandingDraft.logoIncludesText && (
+                            <div className="md:col-span-2">
+                              {brandingImageField({
+                                label: "App Name Image",
+                                value: brandingDraft.appNameImageDataUrl,
+                                onChange: (v) => setBrandingDraft({ ...brandingDraft, appNameImageDataUrl: v }),
+                                help: "Optional - use a designed wordmark/logotype image instead of the typed App Name above. The typed App Name is still used for the browser tab title either way.",
+                              })}
+                            </div>
+                          )}
+                          <div className="md:col-span-2">
+                            {brandingImageField({
+                              label: "Tagline Image",
+                              value: brandingDraft.taglineImageDataUrl,
+                              onChange: (v) => setBrandingDraft({ ...brandingDraft, taglineImageDataUrl: v }),
+                              help: "Optional - use a designed image instead of the typed Tagline above.",
+                            })}
                           </div>
                         </div>
                       </div>

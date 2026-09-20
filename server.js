@@ -7,11 +7,14 @@ const app = express();
 const PORT = 5179;
 
 app.use(cors());
-// Default 100kb is too small for /api/branding's base64 logo uploads (see
+// Default 100kb is too small for /api/branding's base64 image uploads (see
 // that route below) - raised globally since this is the middleware that
-// actually applies first; a route-specific override on just that route
-// would never take effect; body-parser only parses the request body once.
-app.use(express.json({ limit: '3mb' }));
+// actually applies first; a route-specific override would never take
+// effect, since body-parser only parses the request body once. Up to three
+// images (logo, app-name image, tagline image) can be present in a single
+// branding save, each capped at ~2.8MB base64 - 10mb gives headroom above
+// that worst case (~8.4MB) plus the rest of the JSON payload.
+app.use(express.json({ limit: '10mb' }));
 app.use(express.static(path.join(__dirname, 'dist')));
 
 const DATA_DIR = path.join(__dirname, 'data');
@@ -46,7 +49,20 @@ if (!fsSync.existsSync(USERS_FILE)) {
 
 // Default branding matches the app's original built-in look, so nothing
 // visually changes until an admin explicitly customizes it via Settings.
-const DEFAULT_BRANDING = { appName: "STAR", accentColor: "#2f5da8", tagline: "Storage Tracking & Audit Reporting", logoDataUrl: null, logoIncludesText: false };
+const DEFAULT_BRANDING = {
+  appName: "STAR",
+  accentColor: "#2f5da8",
+  tagline: "Storage Tracking & Audit Reporting",
+  logoDataUrl: null,
+  logoIncludesText: false,
+  // Optional alternatives to the plain-text appName/tagline fields above,
+  // for brand assets that are themselves designed images (a custom
+  // wordmark/logotype, a styled tagline graphic) rather than plain text -
+  // each is independent and only overrides its own text field when set,
+  // same precedence pattern as logoDataUrl + logoIncludesText already use.
+  appNameImageDataUrl: null,
+  taglineImageDataUrl: null,
+};
 if (!fsSync.existsSync(BRANDING_FILE)) {
   fsSync.writeFileSync(BRANDING_FILE, JSON.stringify(DEFAULT_BRANDING, null, 2));
 }
@@ -61,8 +77,22 @@ app.get('/api/branding', async (req, res) => {
   }
 });
 
+// Shared validation for every optional image field on /api/branding (logo,
+// app-name image, tagline image) - same format whitelist and size cap for
+// all three, just with a field-specific label in the error message.
+function validateOptionalImage(value, label) {
+  if (value === null || value === undefined) return null;
+  if (typeof value !== 'string' || !/^data:image\/(png|jpeg|jpg|svg\+xml|webp);base64,/.test(value)) {
+    return `${label} must be a PNG, JPEG, WebP, or SVG image.`;
+  }
+  if (value.length > 2_800_000) {
+    return `${label} is too large - please use an image under ~2MB.`;
+  }
+  return null;
+}
+
 app.put('/api/branding', async (req, res) => {
-  const { appName, accentColor, tagline, logoDataUrl, logoIncludesText } = req.body || {};
+  const { appName, accentColor, tagline, logoDataUrl, logoIncludesText, appNameImageDataUrl, taglineImageDataUrl } = req.body || {};
   if (typeof appName !== 'string' || !appName.trim() || appName.length > 60) {
     return res.status(400).json({ error: "App name must be 1-60 characters." });
   }
@@ -73,13 +103,13 @@ app.put('/api/branding', async (req, res) => {
   if (tagline !== undefined && (typeof tagline !== 'string' || tagline.length > 100)) {
     return res.status(400).json({ error: "Tagline must be 100 characters or fewer." });
   }
-  if (logoDataUrl !== null && logoDataUrl !== undefined) {
-    if (typeof logoDataUrl !== 'string' || !/^data:image\/(png|jpeg|jpg|svg\+xml|webp);base64,/.test(logoDataUrl)) {
-      return res.status(400).json({ error: "Logo must be a PNG, JPEG, WebP, or SVG image." });
-    }
-    if (logoDataUrl.length > 2_800_000) {
-      return res.status(400).json({ error: "Logo is too large - please use an image under ~2MB." });
-    }
+  for (const [value, label] of [
+    [logoDataUrl, "Logo"],
+    [appNameImageDataUrl, "App name image"],
+    [taglineImageDataUrl, "Tagline image"],
+  ]) {
+    const err = validateOptionalImage(value, label);
+    if (err) return res.status(400).json({ error: err });
   }
   const branding = {
     appName: appName.trim(),
@@ -87,6 +117,8 @@ app.put('/api/branding', async (req, res) => {
     tagline: typeof tagline === 'string' ? tagline.trim() : '',
     logoDataUrl: logoDataUrl || null,
     logoIncludesText: logoIncludesText === true,
+    appNameImageDataUrl: appNameImageDataUrl || null,
+    taglineImageDataUrl: taglineImageDataUrl || null,
   };
   try {
     await fs.writeFile(BRANDING_FILE, JSON.stringify(branding, null, 2));
