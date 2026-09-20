@@ -24,7 +24,13 @@ const BRANDING_FILE = path.join(DATA_DIR, 'branding.json');
 // each month's Excel export + HTML summary. Read-only from here - this
 // server never writes into it, only lists/serves what that script produced.
 const REPORTS_DIR = path.join(__dirname, 'mams-automation', 'reports');
-const REPORT_FILENAME_RE = /^star_monthly_report_\d{4}-\d{2}-\d{2}_\d{4}\.xls$/;
+// Automated (monthly cron) reports use "monthly"; a manually-downloaded
+// report saved via POST /api/reports/manual below uses "manual" - the
+// prefix is the only thing that distinguishes them, so every other report
+// endpoint (history, preview, download, delete, /api/v1/reports) accepts
+// both through this one shared pattern.
+const REPORT_FILENAME_RE = /^star_(monthly|manual)_report_\d{4}-\d{2}-\d{2}_\d{4}\.xls$/;
+const REPORT_SOURCE = { monthly: 'automated', manual: 'manual' };
 
 const fsSync = require('fs');
 if (!fsSync.existsSync(DATA_DIR)) {
@@ -376,16 +382,27 @@ app.get('/api/reports/history', async (req, res) => {
     }
     const reports = [];
     for (const filename of files) {
-      if (!REPORT_FILENAME_RE.test(filename)) continue; // strict whitelist - see below
+      const fm = filename.match(REPORT_FILENAME_RE);
+      if (!fm) continue; // strict whitelist - see below
       const m = filename.match(/(\d{4})-(\d{2})-(\d{2})_(\d{2})(\d{2})/);
       const stat = await fs.stat(path.join(REPORTS_DIR, filename));
-      reports.push({
+      const entry = {
         filename,
         date: `${m[1]}-${m[2]}-${m[3]}`,
         time: `${m[4]}:${m[5]}`,
         sizeBytes: stat.size,
         generatedAt: stat.mtime.toISOString(),
-      });
+        source: REPORT_SOURCE[fm[1]],
+      };
+      if (entry.source === 'manual') {
+        // Best-effort: a missing/unreadable sidecar just means "by" is omitted,
+        // never a reason to drop the report entry itself.
+        try {
+          const meta = JSON.parse(await fs.readFile(path.join(REPORTS_DIR, `${filename}.meta.json`), 'utf8'));
+          if (typeof meta.by === 'string' && meta.by) entry.by = meta.by;
+        } catch (e) { /* no sidecar - fine */ }
+      }
+      reports.push(entry);
     }
     reports.sort((a, b) => (a.generatedAt < b.generatedAt ? 1 : -1)); // newest first
     res.json(reports);
@@ -480,9 +497,49 @@ app.delete('/api/reports/delete', async (req, res) => {
     // error - not every .xls necessarily has one.
     const htmlPath = fullPath.replace(/\.xls$/, '.html');
     await fs.unlink(htmlPath).catch(() => {});
+    // A manual report's optional "by" sidecar - same best-effort cleanup.
+    await fs.unlink(`${fullPath}.meta.json`).catch(() => {});
     res.json({ success: true });
   } catch (e) {
     res.status(404).json({ error: 'Report not found.' });
+  }
+});
+
+// Saves a copy of a manually-downloaded report (the "Download Excel" button
+// in the browser) into the same reports/ folder the automated monthly job
+// uses, so it shows up in Report History too - distinguished from an
+// automated report by the "manual" filename prefix (see REPORT_FILENAME_RE)
+// rather than a separate table/flag, keeping one single source of truth for
+// "what reports exist" (a directory listing) instead of a DB that could
+// drift out of sync with the actual files.
+app.post('/api/reports/manual', async (req, res) => {
+  const { html, by } = req.body || {};
+  if (typeof html !== 'string' || !html.trim()) {
+    return res.status(400).json({ error: 'No report content provided.' });
+  }
+  // Not a hard security boundary (this endpoint just writes a new file,
+  // it can't be pointed outside REPORTS_DIR), just a sanity cap - matches
+  // the global 3mb JSON body limit already in place, well beyond any
+  // realistic HTML table export.
+  if (html.length > 3_000_000) {
+    return res.status(400).json({ error: 'Report content is too large.' });
+  }
+  const now = new Date();
+  const yyyy = now.getFullYear(), mm = String(now.getMonth() + 1).padStart(2, '0'), dd = String(now.getDate()).padStart(2, '0');
+  const hh = String(now.getHours()).padStart(2, '0'), min = String(now.getMinutes()).padStart(2, '0');
+  const filename = `star_manual_report_${yyyy}-${mm}-${dd}_${hh}${min}.xls`;
+  try {
+    await fs.mkdir(REPORTS_DIR, { recursive: true });
+    await fs.writeFile(path.join(REPORTS_DIR, filename), html, 'utf8');
+    if (typeof by === 'string' && by.trim()) {
+      // Best-effort - a failed sidecar write shouldn't fail the save itself,
+      // it just means this entry shows up without a "by" name later.
+      await fs.writeFile(path.join(REPORTS_DIR, `${filename}.meta.json`), JSON.stringify({ by: by.trim().slice(0, 60) }), 'utf8').catch(() => {});
+    }
+    res.json({ success: true, filename });
+  } catch (err) {
+    console.error('Error saving manual report:', err);
+    res.status(500).json({ error: 'Could not save report.' });
   }
 });
 
@@ -506,7 +563,7 @@ app.get('/api/v1', (req, res) => {
       'GET /api/v1/usage': 'IBM/COMP usage summary (TB used, capacity, % full)',
       'GET /api/v1/rows': 'All storage rows for both IBM and COMP',
       'GET /api/v1/rows/:side': "Storage rows for one side - 'ibm' or 'comp'",
-      'GET /api/v1/reports': 'List of past monthly Excel reports',
+      'GET /api/v1/reports': 'List of past Excel reports (automated monthly + manual downloads)',
       'GET /api/v1/reports/:filename/download': 'Download one report file by name',
     },
   });
@@ -576,7 +633,8 @@ app.get('/api/v1/reports', async (req, res) => {
     }
     const reports = [];
     for (const filename of files) {
-      if (!REPORT_FILENAME_RE.test(filename)) continue;
+      const fm = filename.match(REPORT_FILENAME_RE);
+      if (!fm) continue;
       const m = filename.match(/(\d{4})-(\d{2})-(\d{2})_(\d{2})(\d{2})/);
       const stat = await fs.stat(path.join(REPORTS_DIR, filename));
       reports.push({
@@ -585,6 +643,7 @@ app.get('/api/v1/reports', async (req, res) => {
         time: `${m[4]}:${m[5]}`,
         sizeBytes: stat.size,
         generatedAt: stat.mtime.toISOString(),
+        source: REPORT_SOURCE[fm[1]],
         downloadUrl: `/api/v1/reports/${encodeURIComponent(filename)}/download`,
       });
     }

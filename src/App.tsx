@@ -715,7 +715,7 @@ export default function App() {
   const [aiOutput, setAiOutput] = useState<string | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [reportHistory, setReportHistory] = useState<{ filename: string; date: string; time: string; sizeBytes: number }[] | null>(null);
+  const [reportHistory, setReportHistory] = useState<{ filename: string; date: string; time: string; sizeBytes: number; source?: "automated" | "manual"; by?: string }[] | null>(null);
   const [reportHistoryLoading, setReportHistoryLoading] = useState(false);
   const [previewReport, setPreviewReport] = useState<{ filename: string; label: string } | null>(null);
   const [newUser, setNewUser] = useState({ username: '', password: '', role: 'user' });
@@ -1052,6 +1052,26 @@ const onChangeUsageDell = async (val: string) => {
       document.body.appendChild(a);
       a.click();
       setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 0);
+
+      // Also save a copy server-side - best-effort, and deliberately doesn't
+      // block or affect the browser download above in any way (the person
+      // already has their file regardless of whether this succeeds). Shows
+      // up in Report History tagged "manual" alongside the automated
+      // monthly reports, so there's one place to find every export.
+      fetch("/api/reports/manual", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ html, by: currentUser }),
+      })
+        .then((r) => r.json().catch(() => ({})))
+        .then((data) => {
+          if (data?.success) {
+            refreshReportHistory();
+          } else {
+            console.warn("Saving to Report History failed:", data?.error);
+          }
+        })
+        .catch((e) => console.warn("Saving to Report History failed:", e));
     } catch (e: any) {
       console.error("Download failed:", e);
       alert("Download failed: " + (e?.message || e));
@@ -1076,16 +1096,18 @@ const onChangeUsageDell = async (val: string) => {
   const [ibmUsageUpdated, setIbmUsageUpdated] = useState<string | null>(null);
   const [compUsageUpdated, setCompUsageUpdated] = useState<string | null>(null);
 
+  const refreshReportHistory = () => {
+    setReportHistoryLoading(true);
+    return fetch("/api/reports/history", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : []))
+      .then((list) => setReportHistory(Array.isArray(list) ? list : []))
+      .catch(() => setReportHistory([]))
+      .finally(() => setReportHistoryLoading(false));
+  };
+
   useEffect(() => {
     if (!showSettings) return;
-    let cancelled = false;
-    setReportHistoryLoading(true);
-    fetch("/api/reports/history", { cache: "no-store" })
-      .then((r) => (r.ok ? r.json() : []))
-      .then((list) => { if (!cancelled) setReportHistory(Array.isArray(list) ? list : []); })
-      .catch(() => { if (!cancelled) setReportHistory([]); })
-      .finally(() => { if (!cancelled) setReportHistoryLoading(false); });
-    return () => { cancelled = true; };
+    refreshReportHistory();
   }, [showSettings]);
 
   useEffect(() => {
@@ -1522,17 +1544,26 @@ RULES:
                       {reportHistoryLoading ? (
                         <p className="text-sm text-gray-500 dark:text-gray-400">Loading...</p>
                       ) : !reportHistory || reportHistory.length === 0 ? (
-                        <p className="text-sm text-gray-500 dark:text-gray-400">No monthly reports have been generated yet. One is saved here automatically at the end of each month.</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">No reports yet. One is saved here automatically at the end of each month, and every time someone downloads a report manually.</p>
                       ) : (
                         <div className="space-y-2">
                           {reportHistory.map((r) => {
                             const [y, m, d] = r.date.split("-");
                             const label = new Date(Number(y), Number(m) - 1, Number(d)).toLocaleString("en-US", { month: "long", year: "numeric" });
                             const sizeKb = (r.sizeBytes / 1024).toFixed(0);
+                            const isManual = r.source === "manual";
                             return (
                               <div key={r.filename} className="flex items-center justify-between gap-3 rounded-md border border-gray-200 px-3 py-2 dark:border-gray-700">
                                 <div>
-                                  <div className="text-sm font-medium text-gray-800 dark:text-gray-200">{label}</div>
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-sm font-medium text-gray-800 dark:text-gray-200">{label}</span>
+                                    <span
+                                      className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${isManual ? "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300" : "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"}`}
+                                      title={isManual ? "Downloaded manually from the app" : "Generated automatically by the month-end job"}
+                                    >
+                                      {isManual ? `Manual${r.by ? ` \u2014 ${r.by}` : ""}` : "Automated"}
+                                    </span>
+                                  </div>
                                   <div className="text-xs text-gray-500 dark:text-gray-400">Generated {r.date} at {r.time} &middot; {sizeKb} KB</div>
                                 </div>
                                 <div className="flex items-center gap-2">
