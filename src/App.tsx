@@ -1212,31 +1212,23 @@ const onChangeUsageDell = async (val: string) => {
       ) : (
         <div className={`min-h-screen ${effectiveDark ? "dark" : ""} bg-gray-100 text-gray-900 dark:bg-gray-950 dark:text-gray-100`}>
           <header className="sticky top-0 z-10 border-b border-gray-200 bg-white/80 backdrop-blur dark:border-gray-800 dark:bg-gray-900/80">
-            <div className="mx-auto flex max-w-screen-2xl items-center justify-between px-4 py-3">
-              <div className="flex items-center gap-3">
-                {branding.logoDataUrl && (
-                  <img
-                    src={branding.logoDataUrl}
-                    alt={branding.appName}
-                    className={branding.logoIncludesText ? "h-10 object-contain" : "h-8 object-contain"}
-                  />
-                )}
-                {/* Only the name is skipped when the logo already includes it -
-                    the tagline is independent and always shows next to it.
-                    Each of name and tagline can independently be a designed
-                    image instead of plain text - the image takes over
-                    whenever it's set. */}
-                {!branding.logoIncludesText && (
-                  branding.appNameImageDataUrl ? (
-                    <img src={branding.appNameImageDataUrl} alt={branding.appName} className="h-6 object-contain" />
-                  ) : (
-                    <h1 className="text-2xl font-bold tracking-wide" style={{ color: branding.accentColor }}>{branding.appName}</h1>
-                  )
+            <div className="mx-auto flex max-w-screen-2xl items-center justify-between gap-6 px-4 py-3">
+              <div className="flex items-center gap-4">
+                {/* No logo in the header by design - just the name/tagline, kept
+                    compact for the toolbar row. The logo still shows on the
+                    login screen. Since there's no logo here to be redundant
+                    with, the app name always shows regardless of
+                    logoIncludesText (that flag only matters where the logo
+                    itself is actually displayed). */}
+                {branding.appNameImageDataUrl ? (
+                  <img src={branding.appNameImageDataUrl} alt={branding.appName} className="h-6 object-contain" />
+                ) : (
+                  <h1 className="text-2xl font-bold tracking-wide" style={{ color: branding.accentColor }}>{branding.appName}</h1>
                 )}
                 {(branding.taglineImageDataUrl || branding.tagline) && (
                   <>
                     {/* Divider + tagline hide on narrower screens so they never crowd the toolbar buttons */}
-                    <span className="hidden xl:inline h-5 w-px bg-gray-300 dark:bg-gray-700" />
+                    <span className="hidden xl:inline mx-1 h-5 w-px bg-gray-300 dark:bg-gray-700" />
                     {branding.taglineImageDataUrl ? (
                       <img src={branding.taglineImageDataUrl} alt={branding.tagline} className="hidden xl:inline h-4 object-contain" />
                     ) : (
