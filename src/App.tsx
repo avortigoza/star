@@ -1045,8 +1045,9 @@ const onChangeUsageDell = async (val: string) => {
   // its own component and can't trigger React's remount-on-re-render
   // behavior that defining a new component function inside a render body
   // would cause; it just closes over notify/brandingDraft normally.
-  const brandingImageField = (opts: { label: string; value: string | null; onChange: (dataUrl: string | null) => void; help: string }) => (
+  const brandingImageField = (opts: { label: string; value: string | null; onChange: (dataUrl: string | null) => void }) => (
     <div>
+      <label className="mb-1 block text-sm font-medium">{opts.label}</label>
       <div className="flex items-center gap-4">
         <div className="flex h-16 w-16 items-center justify-center rounded-md border border-dashed border-gray-300 dark:border-gray-700">
           {opts.value ? (
@@ -1080,7 +1081,6 @@ const onChangeUsageDell = async (val: string) => {
           )}
         </div>
       </div>
-      <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{opts.help}</p>
     </div>
   );
 
@@ -1502,6 +1502,7 @@ RULES:
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div>
+                            <label className="mb-1 block text-sm font-medium">App Name</label>
                             <input
                               type="text"
                               value={brandingDraft.appName}
@@ -1510,9 +1511,9 @@ RULES:
                               className="w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-700 dark:bg-gray-800"
                               placeholder="STAR"
                             />
-                            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Shown on the login screen and the app header.</p>
                           </div>
                           <div>
+                            <label className="mb-1 block text-sm font-medium">Tagline</label>
                             <input
                               type="text"
                               value={brandingDraft.tagline}
@@ -1521,9 +1522,9 @@ RULES:
                               className="w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-700 dark:bg-gray-800"
                               placeholder="Storage Tracking & Audit Reporting"
                             />
-                            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Shown next to the app name. Leave blank for none - unlike App Name, this always shows even when your logo already includes the app name.</p>
                           </div>
                           <div>
+                            <label className="mb-1 block text-sm font-medium">Accent Color</label>
                             <div className="flex items-center gap-2">
                               <input
                                 type="color"
@@ -1539,14 +1540,12 @@ RULES:
                                 placeholder="#2f5da8"
                               />
                             </div>
-                            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Used for the title, login screen, and the AI Summary header.</p>
                           </div>
                           <div className="md:col-span-2">
                             {brandingImageField({
                               label: "Logo",
                               value: brandingDraft.logoDataUrl,
                               onChange: (v) => setBrandingDraft({ ...brandingDraft, logoDataUrl: v }),
-                              help: "PNG, JPEG, WebP, or SVG. Leave empty to use the default star icon.",
                             })}
                             {brandingDraft.logoDataUrl && (
                               <label className="mt-2 flex items-center gap-2 text-sm">
@@ -1569,7 +1568,6 @@ RULES:
                                 label: "App Name Image",
                                 value: brandingDraft.appNameImageDataUrl,
                                 onChange: (v) => setBrandingDraft({ ...brandingDraft, appNameImageDataUrl: v }),
-                                help: "Optional - use a designed wordmark/logotype image instead of the typed App Name above. The typed App Name is still used for the browser tab title either way.",
                               })}
                             </div>
                           )}
@@ -1578,7 +1576,6 @@ RULES:
                               label: "Tagline Image",
                               value: brandingDraft.taglineImageDataUrl,
                               onChange: (v) => setBrandingDraft({ ...brandingDraft, taglineImageDataUrl: v }),
-                              help: "Optional - use a designed image instead of the typed Tagline above.",
                             })}
                           </div>
                         </div>
@@ -1595,7 +1592,7 @@ RULES:
     <select 
       value={newUser.role} 
       onChange={(e) => setNewUser({...newUser, role: e.target.value})} 
-      className="w-full rounded-md border border-gray-300 px-3 py-2 pr-8 bg-white dark:bg-gray-100 text-gray-900 dark:text-gray-900 appearance-none"
+      className="w-full rounded-md border border-gray-300 px-3 py-2 pr-8 bg-white dark:bg-gray-800 appearance-none"
     >
       <option value="user">User</option>
       <option value="admin">Admin</option>
