@@ -1247,7 +1247,7 @@ const onChangeUsageDell = async (val: string) => {
                 {(branding.taglineImageDataUrl || branding.tagline) && (
                   <>
                     {/* Divider + tagline hide on narrower screens so they never crowd the toolbar buttons */}
-                    <span className="hidden xl:inline h-5 w-px bg-gray-300 dark:bg-gray-700" />
+                    <span className="hidden xl:inline ml-1 -mr-1 h-5 w-px bg-gray-300 dark:bg-gray-700" />
                     {branding.taglineImageDataUrl ? (
                       <img src={branding.taglineImageDataUrl} alt={branding.tagline} className="hidden xl:inline h-6 object-contain" />
                     ) : (
