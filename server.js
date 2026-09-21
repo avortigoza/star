@@ -2,6 +2,8 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs').promises;
+const swaggerUi = require('swagger-ui-express');
+const openApiSpec = require('./openapi');
 
 const app = express();
 const PORT = 5179;
@@ -587,10 +589,17 @@ app.get('/api/health', (req, res) => {
 const CAP_IBM = 660;
 const CAP_DELL = 440;
 
+// Interactive Swagger UI + raw OpenAPI spec for the /api/v1 contract above -
+// mounted before the /api/v1 routes themselves purely for readability
+// (registration order doesn't matter here, these paths don't overlap).
+app.use('/api/v1/docs', swaggerUi.serve, swaggerUi.setup(openApiSpec));
+app.get('/api/v1/openapi.json', (req, res) => res.json(openApiSpec));
+
 app.get('/api/v1', (req, res) => {
   res.json({
     name: 'STAR Storage API',
     version: 'v1',
+    documentation: '/api/v1/docs',
     endpoints: {
       'GET /api/v1/usage': 'IBM/COMP usage summary (TB used, capacity, % full)',
       'GET /api/v1/rows': 'All storage rows for both IBM and COMP',
