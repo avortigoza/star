@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Download, Moon, Sun, Laptop, Trash2, Upload, LogOut, Sparkles, Settings, Eye, EyeOff, Star } from "lucide-react";
+import { Download, Moon, Sun, Laptop, Trash2, Upload, LogOut, Sparkles, Settings, Eye, EyeOff, Star, MoreVertical, Check } from "lucide-react";
 import Papa from "papaparse";
 import * as XLSX from "xlsx";
 
@@ -731,6 +731,8 @@ export default function App() {
   const [aiOutput, setAiOutput] = useState<string | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
+  const moreMenuRef = useRef<HTMLDivElement>(null);
   const [reportHistory, setReportHistory] = useState<{ filename: string; date: string; time: string; sizeBytes: number; source?: "automated" | "manual"; by?: string }[] | null>(null);
   const [reportHistoryLoading, setReportHistoryLoading] = useState(false);
   const [previewReport, setPreviewReport] = useState<{ filename: string; label: string } | null>(null);
@@ -802,6 +804,18 @@ export default function App() {
   useEffect(() => {
     document.title = branding.appName || "STAR";
   }, [branding.appName]);
+
+  // Closes the header's "more actions" dropdown on an outside click.
+  useEffect(() => {
+    if (!showMoreMenu) return;
+    const onClickOutside = (e: MouseEvent) => {
+      if (moreMenuRef.current && !moreMenuRef.current.contains(e.target as Node)) {
+        setShowMoreMenu(false);
+      }
+    };
+    document.addEventListener("mousedown", onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
+  }, [showMoreMenu]);
 
   // ===== Auto Logout =====
   useEffect(() => {
@@ -1217,7 +1231,7 @@ const onChangeUsageDell = async (val: string) => {
       ) : (
         <div className={`min-h-screen ${effectiveDark ? "dark" : ""} bg-gray-100 text-gray-900 dark:bg-gray-950 dark:text-gray-100`}>
           <header className="sticky top-0 z-10 border-b border-gray-200 bg-white/80 backdrop-blur dark:border-gray-800 dark:bg-gray-900/80">
-            <div className="mx-auto flex max-w-[1800px] items-center justify-between px-2 py-3">
+            <div className="mx-auto flex max-w-screen-2xl items-center justify-between px-2 py-3">
               <div className="flex items-center gap-3">
                 {/* No logo in the header by design - just the name/tagline, kept
                     compact for the toolbar row. The logo still shows on the
@@ -1250,12 +1264,6 @@ const onChangeUsageDell = async (val: string) => {
                 <Button variant="outline" onClick={() => { if (userRole === "admin") dellRef.current?.click(); else notify("Only admins can import data.", "err"); }}><Upload className="h-4 w-4" /> Import COMP CSV</Button>
                 
                 <Button onClick={exportExcel}><Download className="h-4 w-4" /> Download Excel</Button>
-                <Button variant="outline" onClick={() => { if (userRole === "admin") clearData(); else notify("Only admins can clear data.", "err"); }}><Trash2 className="h-4 w-4" /> Clear</Button>
-                
-                {/* Theme Buttons */}
-                <Button variant="outline" onClick={() => changeTheme('light')} className={theme === 'light' ? "ring-2 ring-blue-500" : ""}><Sun className="h-4 w-4" /></Button>
-<Button variant="outline" onClick={() => changeTheme('dark')} className={theme === 'dark' ? "ring-2 ring-blue-500" : ""}><Moon className="h-4 w-4" /></Button>
-<Button variant="outline" onClick={() => changeTheme('system')} className={theme === 'system' ? "ring-2 ring-blue-500" : ""}><Laptop className="h-4 w-4" /></Button>
 
                 <Button onClick={async () => { setAiLoading(true); setAiOutput(null); setShowAI(true); try {
                   const ibmTopLevel = rootChildren(ibmRows, "/Volumes/snibmprod");
@@ -1326,8 +1334,33 @@ RULES:
                   <Sparkles className="h-4 w-4" /> {aiLoading ? "Generating..." : "AI Summary"}
                 </Button>
                 
-                <Button variant="outline" onClick={() => { if (userRole === "admin") setShowSettings(true); else notify("Only admins can access settings.", "err"); }}><Settings className="h-4 w-4" /> Settings</Button>
-                <Button variant="outline" onClick={handleLogout}><LogOut className="h-4 w-4" /> Logout</Button>
+                <div className="relative" ref={moreMenuRef}>
+                  <Button variant="outline" onClick={() => setShowMoreMenu((v) => !v)}><MoreVertical className="h-4 w-4" /></Button>
+                  {showMoreMenu && (
+                    <div className="absolute right-0 top-full z-20 mt-2 w-48 rounded-lg border border-gray-200 bg-white py-1 shadow-lg dark:border-gray-700 dark:bg-gray-900">
+                      <button type="button" onClick={() => { changeTheme('light'); setShowMoreMenu(false); }} className="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-800">
+                        <Sun className="h-4 w-4" /> Light {theme === 'light' && <Check className="ml-auto h-3.5 w-3.5" />}
+                      </button>
+                      <button type="button" onClick={() => { changeTheme('dark'); setShowMoreMenu(false); }} className="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-800">
+                        <Moon className="h-4 w-4" /> Dark {theme === 'dark' && <Check className="ml-auto h-3.5 w-3.5" />}
+                      </button>
+                      <button type="button" onClick={() => { changeTheme('system'); setShowMoreMenu(false); }} className="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-800">
+                        <Laptop className="h-4 w-4" /> System {theme === 'system' && <Check className="ml-auto h-3.5 w-3.5" />}
+                      </button>
+                      <div className="my-1 border-t border-gray-200 dark:border-gray-700" />
+                      <button type="button" onClick={() => { setShowMoreMenu(false); if (userRole === "admin") setShowSettings(true); else notify("Only admins can access settings.", "err"); }} className="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-800">
+                        <Settings className="h-4 w-4" /> Settings
+                      </button>
+                      <button type="button" onClick={() => { setShowMoreMenu(false); if (userRole === "admin") clearData(); else notify("Only admins can clear data.", "err"); }} className="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-800">
+                        <Trash2 className="h-4 w-4" /> Clear
+                      </button>
+                      <div className="my-1 border-t border-gray-200 dark:border-gray-700" />
+                      <button type="button" onClick={() => { setShowMoreMenu(false); handleLogout(); }} className="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-800">
+                        <LogOut className="h-4 w-4" /> Logout
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </header>
@@ -1702,7 +1735,7 @@ RULES:
             </div>
           )}
 
-          <main className="mx-auto max-w-[1800px] p-4">
+          <main className="mx-auto max-w-screen-2xl p-4">
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <PanelWithBuckets title="Post Prod HR Storage IBM" rows={ibmRows} buckets={ibmBuckets} manualUsage={manualWebIBM} setManualUsage={onChangeUsageIBM} userRole={userRole} side="IBM" sortPrefs={sortPrefs} saveSortPreference={saveSortPreference} updatedInfo={formatUpdated(ibmUsageUpdated, 36)} scriptUpdatedInfo={formatUpdated(ibmRowsUpdated, 36)} />
               <PanelWithBuckets title="Post Prod HR Storage IBM FS5K" rows={dellRows} buckets={dellBuckets} manualUsage={manualWebDell} setManualUsage={onChangeUsageDell} userRole={userRole} side="COMP" sortPrefs={sortPrefs} saveSortPreference={saveSortPreference} updatedInfo={formatUpdated(compUsageUpdated, 36)} scriptUpdatedInfo={formatUpdated(compRowsUpdated, 36)} />
