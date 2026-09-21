@@ -965,7 +965,7 @@ useEffect(() => {
         setDellRows(parsed);
         saveToLocalStorage("comp-rows", parsed);
         await apiSaveRows("COMP", parsed);
-        notify(`COMP data (${parsed.length} rows) saved to server.`, "ok");
+        notify(`FS5K data (${parsed.length} rows) saved to server.`, "ok");
         if (dellRef.current) dellRef.current.value = "";
       }
       // Reflect the new save time immediately rather than waiting for the next
@@ -1260,7 +1260,7 @@ const onChangeUsageDell = async (val: string) => {
                 <Button variant="outline" onClick={() => { if (userRole === "admin") ibmRef.current?.click(); else notify("Only admins can import data.", "err"); }}><Upload className="h-4 w-4" /> Import IBM CSV</Button>
                 
                 <input ref={dellRef} type="file" accept=".csv,.xlsx,.xls" className="hidden" onChange={(e) => { if (userRole === "admin") importCSV("COMP", e.target.files?.[0]); else notify("Only admins can import data.", "err"); if (dellRef.current) dellRef.current.value = ""; }} />
-                <Button variant="outline" onClick={() => { if (userRole === "admin") dellRef.current?.click(); else notify("Only admins can import data.", "err"); }}><Upload className="h-4 w-4" /> Import COMP CSV</Button>
+                <Button variant="outline" onClick={() => { if (userRole === "admin") dellRef.current?.click(); else notify("Only admins can import data.", "err"); }}><Upload className="h-4 w-4" /> Import FS5K CSV</Button>
                 
                 <Button onClick={exportExcel}><Download className="h-4 w-4" /> Download Excel</Button>
 
