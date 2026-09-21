@@ -14,6 +14,7 @@ WORKDIR /var/www/mams-storage-audit
 
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/server.js ./
+COPY --from=builder /app/openapi.js ./
 COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/src ./src
 COPY --from=builder /app/index.html ./index.html
