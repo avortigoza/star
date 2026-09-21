@@ -1231,7 +1231,7 @@ const onChangeUsageDell = async (val: string) => {
       ) : (
         <div className={`min-h-screen ${effectiveDark ? "dark" : ""} bg-gray-100 text-gray-900 dark:bg-gray-950 dark:text-gray-100`}>
           <header className="sticky top-0 z-10 border-b border-gray-200 bg-white/80 backdrop-blur dark:border-gray-800 dark:bg-gray-900/80">
-            <div className="mx-auto flex max-w-screen-2xl items-center justify-between px-2 py-3">
+            <div className="mx-auto flex max-w-screen-2xl items-center justify-between px-4 py-3">
               <div className="flex items-center gap-3">
                 {/* No logo in the header by design - just the name/tagline, kept
                     compact for the toolbar row. The logo still shows on the
