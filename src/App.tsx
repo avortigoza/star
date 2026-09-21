@@ -768,34 +768,35 @@ export default function App() {
   };
 
   // ===== THEME FUNCTIONS =====
+  // Just updates state + persistence - the effect below (which reacts to
+  // both theme and prefersDark) is the single place that actually applies
+  // the 'dark' class, so there's one source of truth instead of this
+  // function and that effect potentially disagreeing.
   const changeTheme = (val: "light" | "dark" | "system") => {
-    console.log('Changing theme to:', val);
     setTheme(val);
     localStorage.setItem(LS_KEYS.theme, val);
-    
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const isDark = val === 'system' ? prefersDark : val === 'dark';
-    
-    if (isDark) {
-      document.documentElement.classList.add('dark');
-      document.body.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-      document.body.classList.remove('dark');
-    }
   };
 
-  // ===== THEME PERSISTENCE ON LOAD =====
+  // ===== System Preference Listener =====
   useEffect(() => {
-    const savedTheme = localStorage.getItem('sar-theme');
-    if (savedTheme === 'dark') {
-      document.documentElement.classList.add('dark');
-      document.body.classList.add('dark');
-    } else if (savedTheme === 'light') {
-      document.documentElement.classList.remove('dark');
-      document.body.classList.remove('dark');
-    }
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    const handler = (e: MediaQueryListEvent) => setPrefersDark(e.matches);
+    setPrefersDark(mq.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
   }, []);
+
+  // ===== APPLY THEME (single source of truth) =====
+  // Runs on mount and on every theme/prefersDark change - covers the
+  // 'system' case correctly (the old version of this effect only handled
+  // literal 'dark'/'light', silently doing nothing for 'system' - since
+  // 'system' is also the default for a first-ever visit with no saved
+  // preference at all, that wasn't an edge case, it was the common one).
+  useEffect(() => {
+    const isDark = theme === "system" ? prefersDark : theme === "dark";
+    document.documentElement.classList.toggle("dark", isDark);
+    document.body.classList.toggle("dark", isDark);
+  }, [theme, prefersDark]);
 
   // Keep the browser tab title in sync with the configured app name -
   // matters most when a logo replaces the visible app-name text (see
@@ -929,15 +930,6 @@ useEffect(() => {
   };
   loadUsage();
 }, []);
-
-  // ===== System Preference Listener =====
-  useEffect(() => {
-    const mq = window.matchMedia("(prefers-color-scheme: dark)");
-    const handler = (e: MediaQueryListEvent) => setPrefersDark(e.matches);
-    setPrefersDark(mq.matches);
-    mq.addEventListener("change", handler);
-    return () => mq.removeEventListener("change", handler);
-  }, []);
 
   // ===== Base Styles =====
   useEffect(() => {

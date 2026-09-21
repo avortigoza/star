@@ -9,7 +9,11 @@
     <script>
       (function() {
         const savedTheme = localStorage.getItem('sar-theme');
-        if (savedTheme === 'dark') {
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        // 'system' (or no saved preference at all, which defaults to
+        // 'system' - see getInitialTheme() in App.tsx) follows the OS.
+        const isDark = savedTheme === 'dark' || (savedTheme !== 'light' && prefersDark);
+        if (isDark) {
           document.documentElement.classList.add('dark');
           document.body.classList.add('dark');
         }
