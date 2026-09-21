@@ -1047,7 +1047,6 @@ const onChangeUsageDell = async (val: string) => {
   // would cause; it just closes over notify/brandingDraft normally.
   const brandingImageField = (opts: { label: string; value: string | null; onChange: (dataUrl: string | null) => void; help: string }) => (
     <div>
-      <label className="mb-1 block text-sm font-medium">{opts.label}</label>
       <div className="flex items-center gap-4">
         <div className="flex h-16 w-16 items-center justify-center rounded-md border border-dashed border-gray-300 dark:border-gray-700">
           {opts.value ? (
@@ -1480,7 +1479,7 @@ RULES:
                               {brandingResetting ? "Restoring..." : "Restore to Default"}
                             </Button>
                             {(brandingDraft.appName !== branding.appName || brandingDraft.tagline !== branding.tagline || brandingDraft.accentColor !== branding.accentColor || brandingDraft.logoDataUrl !== branding.logoDataUrl || brandingDraft.logoIncludesText !== branding.logoIncludesText || brandingDraft.appNameImageDataUrl !== branding.appNameImageDataUrl || brandingDraft.taglineImageDataUrl !== branding.taglineImageDataUrl) && (
-                              <button type="button" onClick={() => setBrandingDraft(branding)} className="rounded-md border border-gray-300 px-3 py-1.5 text-sm hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800">Cancel</button>
+                              <Button type="button" variant="outline" onClick={() => setBrandingDraft(branding)}>Cancel</Button>
                             )}
                             <Button
                               onClick={async () => {
@@ -1503,7 +1502,6 @@ RULES:
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div>
-                            <label className="mb-1 block text-sm font-medium">App Name</label>
                             <input
                               type="text"
                               value={brandingDraft.appName}
@@ -1515,7 +1513,6 @@ RULES:
                             <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Shown on the login screen and the app header.</p>
                           </div>
                           <div>
-                            <label className="mb-1 block text-sm font-medium">Tagline</label>
                             <input
                               type="text"
                               value={brandingDraft.tagline}
@@ -1527,7 +1524,6 @@ RULES:
                             <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Shown next to the app name. Leave blank for none - unlike App Name, this always shows even when your logo already includes the app name.</p>
                           </div>
                           <div>
-                            <label className="mb-1 block text-sm font-medium">Accent Color</label>
                             <div className="flex items-center gap-2">
                               <input
                                 type="color"
