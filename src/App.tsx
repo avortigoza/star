@@ -1702,7 +1702,7 @@ RULES:
             </div>
           )}
 
-          <main className="mx-auto max-w-screen-2xl p-4">
+          <main className="mx-auto max-w-[1800px] p-4">
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <PanelWithBuckets title="Post Prod HR Storage IBM" rows={ibmRows} buckets={ibmBuckets} manualUsage={manualWebIBM} setManualUsage={onChangeUsageIBM} userRole={userRole} side="IBM" sortPrefs={sortPrefs} saveSortPreference={saveSortPreference} updatedInfo={formatUpdated(ibmUsageUpdated, 36)} scriptUpdatedInfo={formatUpdated(ibmRowsUpdated, 36)} />
               <PanelWithBuckets title="Post Prod HR Storage IBM FS5K" rows={dellRows} buckets={dellBuckets} manualUsage={manualWebDell} setManualUsage={onChangeUsageDell} userRole={userRole} side="COMP" sortPrefs={sortPrefs} saveSortPreference={saveSortPreference} updatedInfo={formatUpdated(compUsageUpdated, 36)} scriptUpdatedInfo={formatUpdated(compRowsUpdated, 36)} />
