@@ -169,9 +169,9 @@ function Landing({ onGetStarted, branding }: { onGetStarted: () => void; brandin
 
   const NavLogo = () => (
     branding.logoDataUrl && !branding.logoIncludesText ? (
-      <img src={branding.logoDataUrl} alt={branding.appName} className="h-6 object-contain" />
+      <img src={branding.logoDataUrl} alt={branding.appName} className="h-9 object-contain" />
     ) : (
-      <Star size={20} style={{ color: accent }} fill="currentColor" strokeLinejoin="round" />
+      <Star size={30} style={{ color: accent }} fill="currentColor" strokeLinejoin="round" />
     )
   );
 
