@@ -270,7 +270,7 @@ function Landing({ onGetStarted, branding }: { onGetStarted: () => void; brandin
           <p className="mt-2 max-w-xl text-gray-500 dark:text-gray-400">
             STAR turns raw storage scans into actionable storage reports without requiring someone to manually process the data every month.
           </p>
-          <div className="mt-10 flex flex-wrap items-center justify-center gap-2">
+          <div className="mt-10 flex flex-wrap items-start justify-center gap-2">
             {flowSteps.map((s, i) => (
               <div key={s.label} className="flex items-center gap-2">
                 <div className="flex w-28 flex-col items-center text-center">
