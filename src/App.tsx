@@ -183,15 +183,17 @@ function Landing({ onGetStarted, branding }: { onGetStarted: () => void; brandin
           <div className="flex items-center gap-2 font-bold tracking-wide">
             <NavLogo /> {!branding.logoIncludesText && <span>{branding.appName}</span>}
           </div>
-          <div className="hidden items-center gap-6 text-sm font-medium text-gray-500 dark:text-gray-400 sm:flex">
-            <a href="#overview" onClick={scrollTo("overview")} className="hover:text-gray-900 dark:hover:text-white">Overview</a>
-            <a href="#features" onClick={scrollTo("features")} className="hover:text-gray-900 dark:hover:text-white">Features</a>
-            <a href="#reports" onClick={scrollTo("reports")} className="hover:text-gray-900 dark:hover:text-white">Reports</a>
-            <a href="#api" onClick={scrollTo("api")} className="hover:text-gray-900 dark:hover:text-white">API</a>
+          <div className="flex items-center gap-6">
+            <div className="hidden items-center gap-6 text-sm font-medium text-gray-500 dark:text-gray-400 sm:flex">
+              <a href="#overview" onClick={scrollTo("overview")} className="hover:text-gray-900 dark:hover:text-white">Overview</a>
+              <a href="#features" onClick={scrollTo("features")} className="hover:text-gray-900 dark:hover:text-white">Features</a>
+              <a href="#reports" onClick={scrollTo("reports")} className="hover:text-gray-900 dark:hover:text-white">Reports</a>
+              <a href="#api" onClick={scrollTo("api")} className="hover:text-gray-900 dark:hover:text-white">API</a>
+            </div>
+            <button onClick={onGetStarted} className="rounded-full px-4 py-2 text-sm font-semibold text-white shadow-sm transition active:scale-[.98]" style={{ backgroundColor: accent }}>
+              Sign In
+            </button>
           </div>
-          <button onClick={onGetStarted} className="rounded-full px-4 py-2 text-sm font-semibold text-white shadow-sm transition active:scale-[.98]" style={{ backgroundColor: accent }}>
-            Open {branding.appName}
-          </button>
         </div>
       </nav>
 
@@ -204,17 +206,9 @@ function Landing({ onGetStarted, branding }: { onGetStarted: () => void; brandin
           ) : (
             <h1 className="mb-4 text-5xl font-extrabold tracking-tight">{branding.appName}</h1>
           )}
-          <p className="mb-8 max-w-md text-lg text-gray-600 dark:text-gray-300">
+          <p className="max-w-md text-lg text-gray-600 dark:text-gray-300">
             Monitor storage capacity, usage, and audit reports across your MAMS storage infrastructure.
           </p>
-          <div className="flex flex-wrap gap-3">
-            <button onClick={onGetStarted} className="inline-flex items-center gap-2 rounded-2xl px-6 py-3 font-semibold text-white shadow-sm transition active:scale-[.98]" style={{ backgroundColor: accent }}>
-              Sign In <ArrowRight className="h-4 w-4" />
-            </button>
-            <a href="#features" onClick={scrollTo("features")} className="inline-flex items-center gap-2 rounded-2xl border border-gray-300 px-6 py-3 font-semibold hover:bg-gray-100 dark:border-gray-700 dark:hover:bg-gray-800">
-              See Features
-            </a>
-          </div>
         </div>
 
         {/* Live storage overview card */}
