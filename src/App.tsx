@@ -181,7 +181,7 @@ function Landing({ onGetStarted, branding }: { onGetStarted: () => void; brandin
       <nav className="sticky top-0 z-20 border-b border-gray-200 bg-white/80 backdrop-blur dark:border-gray-800 dark:bg-gray-950/80">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3">
           <div className="flex items-center gap-2 font-bold tracking-wide">
-            <NavLogo /> {!branding.logoIncludesText && <span>{branding.appName}</span>}
+            <NavLogo />
           </div>
           <div className="flex items-center gap-6">
             <div className="hidden items-center gap-6 text-sm font-medium text-gray-500 dark:text-gray-400 sm:flex">
