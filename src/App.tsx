@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Download, Moon, Sun, Laptop, Trash2, Upload, LogOut, Sparkles, Settings, Eye, EyeOff, Star, MoreVertical, Check, Database, Mail, BarChart3, ArrowRight } from "lucide-react";
+import { Download, Moon, Sun, Laptop, Trash2, Upload, LogOut, Sparkles, Settings, Eye, EyeOff, Star, MoreVertical, Check, Database, Mail, BarChart3, ArrowRight, Folder, FileText, Cpu, Cloud, Shield, Palette, Contrast, ChevronRight } from "lucide-react";
 import Papa from "papaparse";
 import * as XLSX from "xlsx";
 
@@ -120,77 +120,258 @@ function Login({ onLogin, branding }: { onLogin: (username: string, role: string
 // =============================
 // Shown first when hitting the app's root URL, before the login form -
 // onGetStarted just flips a piece of local state in the parent (no
-// router in this app), swapping this out for <Login/>.
+// router in this app), swapping this out for <Login/>. Fetches from the
+// public, no-auth /api/v1 endpoints so the hero and report list show
+// genuinely live data rather than placeholder numbers.
 function Landing({ onGetStarted, branding }: { onGetStarted: () => void; branding: { appName: string; accentColor: string; tagline: string; logoDataUrl: string | null; logoIncludesText: boolean; appNameImageDataUrl: string | null; taglineImageDataUrl: string | null } }) {
-  const features = [
-    {
-      icon: BarChart3,
-      title: "Live Usage Dashboards",
-      description: "TB used, capacity, and percent full for every storage volume, refreshed automatically every day.",
-    },
-    {
-      icon: Database,
-      title: "Per-Folder Breakdown",
-      description: "See exactly what's taking up space, down to the folder, with sortable tables and drill-down views.",
-    },
-    {
-      icon: Mail,
-      title: "Automated Monthly Reports",
-      description: "A full Excel report with an AI-written summary, generated and emailed out automatically every month.",
-    },
-    {
-      icon: Sparkles,
-      title: "AI Summary",
-      description: "Get a plain-English read on your current storage picture whenever you need one, on demand.",
-    },
+  const [usage, setUsage] = useState<{ ibm?: any; comp?: any } | null>(null);
+  const [recentReports, setRecentReports] = useState<any[] | null>(null);
+
+  useEffect(() => {
+    fetch("/api/v1/usage").then((r) => (r.ok ? r.json() : null)).then(setUsage).catch(() => setUsage(null));
+    fetch("/api/v1/reports").then((r) => (r.ok ? r.json() : [])).then((list) => setRecentReports(Array.isArray(list) ? list.slice(0, 4) : [])).catch(() => setRecentReports([]));
+  }, []);
+
+  const accent = branding.accentColor;
+  const accentDark = darkenHex(accent, 0.35);
+  const scrollTo = (id: string) => (e: React.MouseEvent) => { e.preventDefault(); document.getElementById(id)?.scrollIntoView({ behavior: "smooth" }); };
+
+  const glanceFeatures = [
+    { icon: BarChart3, title: "Live Storage Usage", description: "Track capacity and utilization across your storage volumes with daily refreshed data." },
+    { icon: Folder, title: "Folder-Level Visibility", description: "Drill down from total capacity to individual folders and top storage paths." },
+    { icon: FileText, title: "Automated Reporting", description: "Generate monthly Excel reports automatically and keep every report in one place." },
+    { icon: Cpu, title: "AI-Powered Summary", description: "Turn storage numbers into a concise, plain-English summary automatically." },
   ];
 
-  return (
-    <div className="min-h-screen bg-gray-100 text-gray-900 dark:bg-gray-950 dark:text-gray-100">
-      <div className="mx-auto flex max-w-4xl flex-col items-center px-6 py-20 text-center">
-        {branding.logoDataUrl ? (
-          <img
-            src={branding.logoDataUrl}
-            alt={branding.appName}
-            className={branding.logoIncludesText ? "mb-2 max-h-40 w-full object-contain" : "mb-6 h-20 object-contain"}
-          />
-        ) : (
-          <Star size={72} className="mb-6" style={{ color: branding.accentColor }} fill="currentColor" strokeLinejoin="round" />
-        )}
-        {!branding.logoIncludesText && (
-          branding.appNameImageDataUrl ? (
-            <img src={branding.appNameImageDataUrl} alt={branding.appName} className="mb-3 h-12 object-contain" />
-          ) : (
-            <h1 className="mb-3 text-5xl font-bold tracking-wide" style={{ color: branding.accentColor }}>{branding.appName}</h1>
-          )
-        )}
-        {branding.taglineImageDataUrl ? (
-          <img src={branding.taglineImageDataUrl} alt={branding.tagline} className="mb-8 h-7 object-contain" />
-        ) : (
-          branding.tagline && (
-            <p className="mb-8 text-lg text-gray-500 dark:text-gray-400">{branding.tagline}</p>
-          )
-        )}
-        <button
-          onClick={onGetStarted}
-          className="mb-16 inline-flex items-center gap-2 rounded-2xl px-6 py-3 font-semibold text-white shadow-sm transition active:scale-[.98]"
-          style={{ backgroundColor: branding.accentColor }}
-        >
-          Sign In <ArrowRight className="h-4 w-4" />
-        </button>
+  const flowSteps = [
+    { icon: Database, label: "Scan", sub: "Scan storage volumes" },
+    { icon: Cloud, label: "Ingest", sub: "Push data into STAR" },
+    { icon: Cpu, label: "Analyze", sub: "Analyze & process" },
+    { icon: Sparkles, label: "AI Summary", sub: "Generate AI summary" },
+    { icon: FileText, label: "Excel Report", sub: "Create Excel report" },
+    { icon: Mail, label: "Email", sub: "Send via email" },
+  ];
 
-        <div className="grid w-full gap-4 sm:grid-cols-2">
-          {features.map((f) => (
-            <div key={f.title} className="flex items-start gap-4 rounded-2xl border border-gray-200 bg-white p-5 text-left shadow-sm dark:border-gray-800 dark:bg-gray-900">
-              <f.icon className="mt-0.5 h-6 w-6 shrink-0" style={{ color: branding.accentColor }} />
+  const trustBadges = [
+    { icon: Shield, title: "Role-based access", description: "Separate everyday users from administrative functions." },
+    { icon: Upload, title: "Controlled imports", description: "CSV imports and data-management actions are admin-only." },
+    { icon: Palette, title: "Configurable branding", description: "Customize STAR's name, tagline, logo, and accent color." },
+    { icon: Contrast, title: "Light & dark mode", description: "Use STAR comfortably in any environment." },
+  ];
+
+  const NavLogo = () => (
+    branding.logoDataUrl && !branding.logoIncludesText ? (
+      <img src={branding.logoDataUrl} alt={branding.appName} className="h-6 object-contain" />
+    ) : (
+      <Star size={20} style={{ color: accent }} fill="currentColor" strokeLinejoin="round" />
+    )
+  );
+
+  return (
+    <div className="min-h-screen bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-100">
+      {/* ===== Nav ===== */}
+      <nav className="sticky top-0 z-20 border-b border-gray-200 bg-white/80 backdrop-blur dark:border-gray-800 dark:bg-gray-950/80">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3">
+          <div className="flex items-center gap-2 font-bold tracking-wide">
+            <NavLogo /> {!branding.logoIncludesText && <span>{branding.appName}</span>}
+          </div>
+          <div className="hidden items-center gap-6 text-sm font-medium text-gray-500 dark:text-gray-400 sm:flex">
+            <a href="#overview" onClick={scrollTo("overview")} className="hover:text-gray-900 dark:hover:text-white">Overview</a>
+            <a href="#features" onClick={scrollTo("features")} className="hover:text-gray-900 dark:hover:text-white">Features</a>
+            <a href="#reports" onClick={scrollTo("reports")} className="hover:text-gray-900 dark:hover:text-white">Reports</a>
+            <a href="#api" onClick={scrollTo("api")} className="hover:text-gray-900 dark:hover:text-white">API</a>
+          </div>
+          <button onClick={onGetStarted} className="rounded-full px-4 py-2 text-sm font-semibold text-white shadow-sm transition active:scale-[.98]" style={{ backgroundColor: accent }}>
+            Open {branding.appName}
+          </button>
+        </div>
+      </nav>
+
+      {/* ===== Hero ===== */}
+      <section id="overview" className="mx-auto grid max-w-6xl gap-10 px-6 py-16 lg:grid-cols-2 lg:items-center">
+        <div>
+          {branding.tagline && <p className="mb-3 text-sm font-semibold uppercase tracking-wide" style={{ color: accent }}>{branding.tagline}</p>}
+          {branding.logoDataUrl && branding.logoIncludesText ? (
+            <img src={branding.logoDataUrl} alt={branding.appName} className="mb-4 max-h-28 object-contain" />
+          ) : (
+            <h1 className="mb-4 text-5xl font-extrabold tracking-tight">{branding.appName}</h1>
+          )}
+          <p className="mb-8 max-w-md text-lg text-gray-600 dark:text-gray-300">
+            Monitor storage capacity, usage, and audit reports across your MAMS storage infrastructure.
+          </p>
+          <div className="flex flex-wrap gap-3">
+            <button onClick={onGetStarted} className="inline-flex items-center gap-2 rounded-2xl px-6 py-3 font-semibold text-white shadow-sm transition active:scale-[.98]" style={{ backgroundColor: accent }}>
+              Sign In <ArrowRight className="h-4 w-4" />
+            </button>
+            <a href="#features" onClick={scrollTo("features")} className="inline-flex items-center gap-2 rounded-2xl border border-gray-300 px-6 py-3 font-semibold hover:bg-gray-100 dark:border-gray-700 dark:hover:bg-gray-800">
+              See Features
+            </a>
+          </div>
+        </div>
+
+        {/* Live storage overview card */}
+        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-lg dark:border-gray-800 dark:bg-gray-900">
+          <div className="mb-4 flex items-center justify-between text-sm">
+            <span className="font-semibold text-gray-900 dark:text-white">Storage Overview</span>
+            {usage ? (
+              <span className="flex items-center gap-1.5 text-gray-400"><span className="h-2 w-2 rounded-full bg-green-500" /> Live</span>
+            ) : (
+              <span className="text-gray-400">Loading…</span>
+            )}
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            {[{ key: "ibm", label: "IBM FS5K" }, { key: "comp", label: "COMP" }].map(({ key, label }) => {
+              const v = usage?.[key];
+              return (
+                <div key={key} className="rounded-xl border border-gray-200 p-4 dark:border-gray-800">
+                  <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-400">{label}</div>
+                  <div className="text-2xl font-bold" style={{ color: accent }}>{v ? `${v.percentFull?.toFixed(1)}%` : "—"}</div>
+                  <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
+                    <div className="h-full rounded-full" style={{ width: `${v?.percentFull || 0}%`, backgroundColor: accent }} />
+                  </div>
+                  <div className="mt-2 text-xs text-gray-400">{v ? `${Math.round(v.usedTB)} TB / ${v.capacityTB} TB` : "no data yet"}</div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* ===== Feature grid ===== */}
+      <section id="features" className="mx-auto max-w-6xl px-6 py-16">
+        <h2 className="text-3xl font-bold">Your storage at a glance</h2>
+        <p className="mt-1 text-gray-500 dark:text-gray-400">Everything you need, in one place.</p>
+        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {glanceFeatures.map((f) => (
+            <div key={f.title} className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+              <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl" style={{ backgroundColor: `${accent}1a` }}>
+                <f.icon className="h-5 w-5" style={{ color: accent }} />
+              </div>
+              <h3 className="font-semibold text-gray-900 dark:text-white">{f.title}</h3>
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{f.description}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ===== Automation flow ===== */}
+      <section className="border-y border-gray-200 bg-white py-16 dark:border-gray-800 dark:bg-gray-900">
+        <div className="mx-auto max-w-6xl px-6">
+          <p className="text-sm font-semibold uppercase tracking-wide" style={{ color: accent }}>Automation</p>
+          <h2 className="mt-2 max-w-xl text-3xl font-bold">From storage scan to report — automatically.</h2>
+          <p className="mt-2 max-w-xl text-gray-500 dark:text-gray-400">
+            STAR turns raw storage scans into actionable storage reports without requiring someone to manually process the data every month.
+          </p>
+          <div className="mt-10 flex flex-wrap items-center justify-center gap-2">
+            {flowSteps.map((s, i) => (
+              <div key={s.label} className="flex items-center gap-2">
+                <div className="flex w-28 flex-col items-center text-center">
+                  <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-xl" style={{ backgroundColor: `${accent}1a` }}>
+                    <s.icon className="h-6 w-6" style={{ color: accent }} />
+                  </div>
+                  <div className="text-sm font-semibold">{s.label}</div>
+                  <div className="text-xs text-gray-400">{s.sub}</div>
+                </div>
+                {i < flowSteps.length - 1 && <ChevronRight className="h-5 w-5 shrink-0 text-gray-300 dark:text-gray-700" />}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ===== Three-column: automation / reports / API ===== */}
+      <section id="reports" className="mx-auto max-w-6xl px-6 py-16">
+        <div className="grid gap-6 lg:grid-cols-3">
+          <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">
+            <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: accent }}>Automation</p>
+            <h3 className="mt-2 text-xl font-bold">Built to run quietly in the background.</h3>
+            <div className="mt-6 flex flex-col items-center gap-2">
+              <div className="w-full rounded-lg border border-gray-200 px-3 py-2 text-center text-sm dark:border-gray-800">Daily Usage Refresh</div>
+              <div className="h-4 w-px bg-gray-300 dark:bg-gray-700" />
+              <div className="w-full rounded-lg px-3 py-2 text-center text-sm font-semibold text-white" style={{ backgroundColor: accent }}>{branding.appName}</div>
+              <div className="h-4 w-px bg-gray-300 dark:bg-gray-700" />
+              <div className="w-full rounded-lg border border-gray-200 px-3 py-2 text-center text-sm dark:border-gray-800">Month-End</div>
+              <div className="flex w-full gap-2 text-xs text-gray-400">
+                <div className="flex-1 rounded-lg border border-gray-200 p-2 text-center dark:border-gray-800">Storage Scan</div>
+                <div className="flex-1 rounded-lg border border-gray-200 p-2 text-center dark:border-gray-800">Excel Report</div>
+                <div className="flex-1 rounded-lg border border-gray-200 p-2 text-center dark:border-gray-800">Email</div>
+              </div>
+            </div>
+            <p className="mt-4 text-xs text-gray-400">No manual consolidation. No monthly scramble.</p>
+          </div>
+
+          <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">
+            <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: accent }}>Report History</p>
+            <h3 className="mt-2 text-xl font-bold">Every report. One place.</h3>
+            <div className="mt-4 space-y-2">
+              {recentReports === null ? (
+                <p className="text-sm text-gray-400">Loading…</p>
+              ) : recentReports.length === 0 ? (
+                <p className="text-sm text-gray-400">No reports generated yet.</p>
+              ) : (
+                recentReports.map((r) => (
+                  <div key={r.filename} className="flex items-center justify-between rounded-lg border border-gray-200 px-3 py-2 text-sm dark:border-gray-800">
+                    <span className="text-gray-600 dark:text-gray-300">{r.date}</span>
+                    <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${r.source === "manual" ? "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300" : "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"}`}>
+                      {r.source === "manual" ? "Manual" : "Automated"}
+                    </span>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          <div id="api" className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">
+            <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: accent }}>Public API</p>
+            <h3 className="mt-2 text-xl font-bold">Storage data other tools can use.</h3>
+            <pre className="mt-4 overflow-x-auto rounded-lg bg-gray-900 p-3 text-xs text-green-300">
+{`GET /api/v1/usage
+
+{
+  "ibm": { "usedTB": ${usage?.ibm ? Math.round(usage.ibm.usedTB) : 572}, "percent": ${usage?.ibm?.percentFull?.toFixed(1) || "86.5"} },
+  "comp": { "usedTB": ${usage?.comp ? Math.round(usage.comp.usedTB) : 417}, "percent": ${usage?.comp?.percentFull?.toFixed(1) || "94.8"} }
+}`}
+            </pre>
+            <p className="mt-3 text-xs text-gray-400">A read-only API makes {branding.appName}'s storage information available to other internal tools and workflows.</p>
+            <a href="/api/v1/docs" className="mt-2 inline-flex items-center gap-1 text-sm font-semibold" style={{ color: accent }}>Explore API Docs <ArrowRight className="h-3.5 w-3.5" /></a>
+          </div>
+        </div>
+      </section>
+
+      {/* ===== Trust badges ===== */}
+      <section className="border-t border-gray-200 bg-white py-10 dark:border-gray-800 dark:bg-gray-900">
+        <div className="mx-auto grid max-w-6xl gap-6 px-6 sm:grid-cols-2 lg:grid-cols-4">
+          {trustBadges.map((b) => (
+            <div key={b.title} className="flex items-start gap-3">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800">
+                <b.icon className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+              </div>
               <div>
-                <h3 className="font-semibold text-gray-900 dark:text-white">{f.title}</h3>
-                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{f.description}</p>
+                <div className="text-sm font-semibold">{b.title}</div>
+                <div className="text-xs text-gray-400">{b.description}</div>
               </div>
             </div>
           ))}
         </div>
-      </div>
+      </section>
+
+      {/* ===== CTA banner ===== */}
+      <section className="px-6 py-16 text-center text-white" style={{ background: `linear-gradient(to right, ${accent}, ${accentDark})` }}>
+        <p className="text-xl font-semibold sm:text-2xl">Know your storage. Understand your usage.<br className="hidden sm:block" /> Report it automatically.</p>
+        <button onClick={onGetStarted} className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-white px-6 py-3 font-semibold text-gray-900 shadow-sm transition active:scale-[.98]">
+          Open {branding.appName} <ArrowRight className="h-4 w-4" />
+        </button>
+      </section>
+
+      {/* ===== Footer ===== */}
+      <footer className="border-t border-gray-200 bg-gray-50 py-8 dark:border-gray-800 dark:bg-gray-950">
+        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-6 text-sm text-gray-400 sm:flex-row">
+          <div className="flex items-center gap-2 font-semibold text-gray-600 dark:text-gray-300">
+            <NavLogo /> {branding.appName}{branding.tagline ? ` — ${branding.tagline}` : ""}
+          </div>
+          <div>Internal MAMS infrastructure &middot; Storage &middot; Reporting &middot; Automation &middot; API</div>
+        </div>
+      </footer>
     </div>
   );
 }
