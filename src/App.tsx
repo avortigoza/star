@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Download, Moon, Sun, Laptop, Trash2, Upload, LogOut, Sparkles, Settings, Eye, EyeOff, Star, MoreVertical, Check, Database, Mail, BarChart3, ArrowRight, Folder, FileText, Cpu, Cloud, Shield, Palette, Contrast, ChevronRight } from "lucide-react";
+import { Download, Moon, Sun, Laptop, Trash2, Upload, LogOut, Sparkles, Settings, Eye, EyeOff, Star, MoreVertical, Check, Database, Mail, BarChart3, ArrowRight, Folder, FileText, Cpu, Cloud, Shield, Palette, Contrast, ChevronRight, X } from "lucide-react";
 import Papa from "papaparse";
 import * as XLSX from "xlsx";
 
@@ -22,7 +22,7 @@ type Bucket = { label: string; prefix: string; exclude?: string[]; skipExact?: b
 // =============================
 // Login Component
 // =============================
-function Login({ onLogin, branding }: { onLogin: (username: string, role: string) => void; branding: { appName: string; accentColor: string; tagline: string; logoDataUrl: string | null; logoIncludesText: boolean; appNameImageDataUrl: string | null; taglineImageDataUrl: string | null } }) {
+function Login({ onLogin, branding, asModal, onClose }: { onLogin: (username: string, role: string) => void; branding: { appName: string; accentColor: string; tagline: string; logoDataUrl: string | null; logoIncludesText: boolean; appNameImageDataUrl: string | null; taglineImageDataUrl: string | null }; asModal?: boolean; onClose?: () => void }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -67,8 +67,16 @@ function Login({ onLogin, branding }: { onLogin: (username: string, role: string
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-950">
-      <form onSubmit={submit} className="w-96 rounded-2xl bg-white dark:bg-gray-900 p-8 shadow-lg flex flex-col gap-4">
+    <div
+      className={asModal ? "fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" : "min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-950"}
+      onClick={asModal ? (e) => { if (e.target === e.currentTarget) onClose?.(); } : undefined}
+    >
+      <form onSubmit={submit} className="relative w-96 rounded-2xl bg-white dark:bg-gray-900 p-8 shadow-lg flex flex-col gap-4">
+        {asModal && (
+          <button type="button" onClick={onClose} aria-label="Close" className="absolute right-4 top-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+            <X className="h-5 w-5" />
+          </button>
+        )}
         <div className="text-center mb-2">
           {branding.logoDataUrl ? (
             <img
@@ -1002,10 +1010,10 @@ export default function App() {
   const [changePassword, setChangePassword] = useState({ username: '', newPassword: '' });
   const [changePasswordShowPassword, setChangePasswordShowPassword] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(() => localStorage.getItem("isAuth") === "true");
-  // Landing page shows first on a fresh visit to the root URL, before the
-  // login form - only relevant while unauthenticated (an already-logged-in
-  // return visit goes straight to the app, never sees this).
-  const [showLanding, setShowLanding] = useState(true);
+  // Landing page is always what an unauthenticated visitor sees first;
+  // "Sign In" opens the login form as an overlay on top of it (rather than
+  // replacing it), closable via its own X button or by clicking outside it.
+  const [showLoginModal, setShowLoginModal] = useState(false);
   const [currentUser, setCurrentUser] = useState(() => localStorage.getItem("currentUser") || "postmams");
   const [userRole, setUserRole] = useState(() => localStorage.getItem("userRole") || "user");
   const [sortPrefs, setSortPrefs] = useState<Record<string, boolean>>({});
@@ -1483,11 +1491,12 @@ const onChangeUsageDell = async (val: string) => {
   return (
     <>
       {!isAuthenticated ? (
-        showLanding ? (
-          <Landing onGetStarted={() => setShowLanding(false)} branding={branding} />
-        ) : (
-          <Login onLogin={handleLogin} branding={branding} />
-        )
+        <>
+          <Landing onGetStarted={() => setShowLoginModal(true)} branding={branding} />
+          {showLoginModal && (
+            <Login onLogin={handleLogin} branding={branding} asModal onClose={() => setShowLoginModal(false)} />
+          )}
+        </>
       ) : (
         <div className={`min-h-screen ${effectiveDark ? "dark" : ""} bg-gray-100 text-gray-900 dark:bg-gray-950 dark:text-gray-100`}>
           <header className="sticky top-0 z-10 border-b border-gray-200 bg-white/80 backdrop-blur dark:border-gray-800 dark:bg-gray-900/80">
