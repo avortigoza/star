@@ -201,12 +201,9 @@ function Landing({ onGetStarted, branding }: { onGetStarted: () => void; brandin
       <section id="overview" className="mx-auto grid max-w-6xl gap-10 px-6 py-16 lg:grid-cols-2 lg:items-center">
         <div>
           {branding.taglineImageDataUrl ? (
-            <img src={branding.taglineImageDataUrl} alt={branding.tagline} className="mb-3 h-6 object-contain" />
+            <img src={branding.taglineImageDataUrl} alt={branding.tagline} className="mb-3 h-8 object-contain" />
           ) : (
-            branding.tagline && <p className="mb-3 text-sm font-semibold uppercase tracking-wide" style={{ color: accent }}>{branding.tagline}</p>
-          )}
-          {branding.logoDataUrl && !branding.logoIncludesText && (
-            <img src={branding.logoDataUrl} alt={branding.appName} className="mb-4 h-14 object-contain" />
+            branding.tagline && <p className="mb-3 text-base font-semibold uppercase tracking-wide" style={{ color: accent }}>{branding.tagline}</p>
           )}
           {branding.logoDataUrl && branding.logoIncludesText ? (
             <img src={branding.logoDataUrl} alt={branding.appName} className="mb-4 max-h-28 object-contain" />
