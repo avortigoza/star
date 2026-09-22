@@ -179,26 +179,26 @@ function Landing({ onGetStarted, branding }: { onGetStarted: () => void; brandin
     <div className="min-h-screen bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-100">
       {/* ===== Nav ===== */}
       <nav className="sticky top-0 z-20 border-b border-gray-200 bg-white/80 backdrop-blur dark:border-gray-800 dark:bg-gray-950/80">
-        <div className="mx-auto flex max-w-6xl items-center gap-8 px-6 py-3">
-          <div className="flex items-center gap-2 font-bold tracking-wide">
-            <NavLogo />
-          </div>
-          <div className="flex items-center gap-6">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3">
+          <div className="flex items-center gap-8">
+            <div className="flex items-center gap-2 font-bold tracking-wide">
+              <NavLogo />
+            </div>
             <div className="hidden items-center gap-6 text-sm font-medium text-gray-500 dark:text-gray-400 sm:flex">
               <a href="#overview" onClick={scrollTo("overview")} className="hover:text-gray-900 dark:hover:text-white">Overview</a>
               <a href="#features" onClick={scrollTo("features")} className="hover:text-gray-900 dark:hover:text-white">Features</a>
               <a href="#reports" onClick={scrollTo("reports")} className="hover:text-gray-900 dark:hover:text-white">Reports</a>
               <a href="#api" onClick={scrollTo("api")} className="hover:text-gray-900 dark:hover:text-white">API</a>
             </div>
-            <button onClick={onGetStarted} className="rounded-full px-4 py-2 text-sm font-semibold text-white shadow-sm transition active:scale-[.98]" style={{ backgroundColor: accent }}>
-              Sign In
-            </button>
           </div>
+          <button onClick={onGetStarted} className="rounded-full px-4 py-2 text-sm font-semibold text-white shadow-sm transition active:scale-[.98]" style={{ backgroundColor: accent }}>
+            Sign In
+          </button>
         </div>
       </nav>
 
       {/* ===== Hero ===== */}
-      <section id="overview" className="mx-auto grid max-w-6xl gap-10 px-6 py-16 lg:grid-cols-2 lg:items-center">
+      <section id="overview" className="mx-auto grid max-w-6xl gap-10 px-6 pt-16 pb-6 lg:grid-cols-2 lg:items-center">
         <div>
           {branding.taglineImageDataUrl ? (
             <img src={branding.taglineImageDataUrl} alt={branding.tagline} className="mb-3 h-8 object-contain" />
@@ -246,7 +246,7 @@ function Landing({ onGetStarted, branding }: { onGetStarted: () => void; brandin
       </section>
 
       {/* ===== Feature grid ===== */}
-      <section id="features" className="mx-auto max-w-6xl px-6 py-16">
+      <section id="features" className="mx-auto max-w-6xl px-6 pt-6 pb-16">
         <h2 className="text-3xl font-bold">Your storage at a glance</h2>
         <p className="mt-1 text-gray-500 dark:text-gray-400">Everything you need, in one place.</p>
         <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
