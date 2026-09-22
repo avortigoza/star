@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Download, Moon, Sun, Laptop, Trash2, Upload, LogOut, Sparkles, Settings, Eye, EyeOff, Star, MoreVertical, Check } from "lucide-react";
+import { Download, Moon, Sun, Laptop, Trash2, Upload, LogOut, Sparkles, Settings, Eye, EyeOff, Star, MoreVertical, Check, Database, Mail, BarChart3, ArrowRight } from "lucide-react";
 import Papa from "papaparse";
 import * as XLSX from "xlsx";
 
@@ -111,6 +111,86 @@ function Login({ onLogin, branding }: { onLogin: (username: string, role: string
           {loading ? "Signing in..." : "Sign In"}
         </button>
       </form>
+    </div>
+  );
+}
+
+// =============================
+// Landing Page
+// =============================
+// Shown first when hitting the app's root URL, before the login form -
+// onGetStarted just flips a piece of local state in the parent (no
+// router in this app), swapping this out for <Login/>.
+function Landing({ onGetStarted, branding }: { onGetStarted: () => void; branding: { appName: string; accentColor: string; tagline: string; logoDataUrl: string | null; logoIncludesText: boolean; appNameImageDataUrl: string | null; taglineImageDataUrl: string | null } }) {
+  const features = [
+    {
+      icon: BarChart3,
+      title: "Live Usage Dashboards",
+      description: "TB used, capacity, and percent full for every storage volume, refreshed automatically every day.",
+    },
+    {
+      icon: Database,
+      title: "Per-Folder Breakdown",
+      description: "See exactly what's taking up space, down to the folder, with sortable tables and drill-down views.",
+    },
+    {
+      icon: Mail,
+      title: "Automated Monthly Reports",
+      description: "A full Excel report with an AI-written summary, generated and emailed out automatically every month.",
+    },
+    {
+      icon: Sparkles,
+      title: "AI Summary",
+      description: "Get a plain-English read on your current storage picture whenever you need one, on demand.",
+    },
+  ];
+
+  return (
+    <div className="min-h-screen bg-gray-100 text-gray-900 dark:bg-gray-950 dark:text-gray-100">
+      <div className="mx-auto flex max-w-4xl flex-col items-center px-6 py-20 text-center">
+        {branding.logoDataUrl ? (
+          <img
+            src={branding.logoDataUrl}
+            alt={branding.appName}
+            className={branding.logoIncludesText ? "mb-2 max-h-40 w-full object-contain" : "mb-6 h-20 object-contain"}
+          />
+        ) : (
+          <Star size={72} className="mb-6" style={{ color: branding.accentColor }} fill="currentColor" strokeLinejoin="round" />
+        )}
+        {!branding.logoIncludesText && (
+          branding.appNameImageDataUrl ? (
+            <img src={branding.appNameImageDataUrl} alt={branding.appName} className="mb-3 h-12 object-contain" />
+          ) : (
+            <h1 className="mb-3 text-5xl font-bold tracking-wide" style={{ color: branding.accentColor }}>{branding.appName}</h1>
+          )
+        )}
+        {branding.taglineImageDataUrl ? (
+          <img src={branding.taglineImageDataUrl} alt={branding.tagline} className="mb-8 h-7 object-contain" />
+        ) : (
+          branding.tagline && (
+            <p className="mb-8 text-lg text-gray-500 dark:text-gray-400">{branding.tagline}</p>
+          )
+        )}
+        <button
+          onClick={onGetStarted}
+          className="mb-16 inline-flex items-center gap-2 rounded-2xl px-6 py-3 font-semibold text-white shadow-sm transition active:scale-[.98]"
+          style={{ backgroundColor: branding.accentColor }}
+        >
+          Sign In <ArrowRight className="h-4 w-4" />
+        </button>
+
+        <div className="grid w-full gap-4 sm:grid-cols-2">
+          {features.map((f) => (
+            <div key={f.title} className="flex items-start gap-4 rounded-2xl border border-gray-200 bg-white p-5 text-left shadow-sm dark:border-gray-800 dark:bg-gray-900">
+              <f.icon className="mt-0.5 h-6 w-6 shrink-0" style={{ color: branding.accentColor }} />
+              <div>
+                <h3 className="font-semibold text-gray-900 dark:text-white">{f.title}</h3>
+                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{f.description}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
@@ -741,6 +821,10 @@ export default function App() {
   const [changePassword, setChangePassword] = useState({ username: '', newPassword: '' });
   const [changePasswordShowPassword, setChangePasswordShowPassword] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(() => localStorage.getItem("isAuth") === "true");
+  // Landing page shows first on a fresh visit to the root URL, before the
+  // login form - only relevant while unauthenticated (an already-logged-in
+  // return visit goes straight to the app, never sees this).
+  const [showLanding, setShowLanding] = useState(true);
   const [currentUser, setCurrentUser] = useState(() => localStorage.getItem("currentUser") || "postmams");
   const [userRole, setUserRole] = useState(() => localStorage.getItem("userRole") || "user");
   const [sortPrefs, setSortPrefs] = useState<Record<string, boolean>>({});
@@ -1218,7 +1302,11 @@ const onChangeUsageDell = async (val: string) => {
   return (
     <>
       {!isAuthenticated ? (
-        <Login onLogin={handleLogin} branding={branding} />
+        showLanding ? (
+          <Landing onGetStarted={() => setShowLanding(false)} branding={branding} />
+        ) : (
+          <Login onLogin={handleLogin} branding={branding} />
+        )
       ) : (
         <div className={`min-h-screen ${effectiveDark ? "dark" : ""} bg-gray-100 text-gray-900 dark:bg-gray-950 dark:text-gray-100`}>
           <header className="sticky top-0 z-10 border-b border-gray-200 bg-white/80 backdrop-blur dark:border-gray-800 dark:bg-gray-900/80">
