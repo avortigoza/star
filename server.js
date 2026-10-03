@@ -240,41 +240,121 @@ app.get('/api/rows', async (req, res) => {
   }
 });
 
+// Shared by PUT /api/rows (browser import / JSON push) and POST
+// /api/ingest/:side (raw-CSV push) so both write exactly the same way.
+async function saveRows(side, data) {
+  let fileData;
+  try {
+    fileData = JSON.parse(await fs.readFile(ROWS_FILE, 'utf8'));
+  } catch (e) {
+    fileData = { IBM: [], COMP: [] };
+  }
+  fileData[side] = data;
+  // Per-side timestamp, so the UI can show when EACH side last changed rather
+  // than the whole file's mtime (which would make an IBM-only save also look
+  // like it touched COMP's data, since both sides live in one file).
+  fileData[`${side}Updated`] = new Date().toISOString();
+  await fs.writeFile(ROWS_FILE, JSON.stringify(fileData, null, 2));
+}
+
 app.put('/api/rows', async (req, res) => {
   const { side, data } = req.body;
   console.log("Saving rows for side:", side);
   console.log("Data length:", data?.length);
-  
+
   if (!side || (side !== "IBM" && side !== "COMP")) {
     return res.status(400).json({ error: "Invalid side parameter. Use 'IBM' or 'COMP'." });
   }
   if (!Array.isArray(data)) {
     return res.status(400).json({ error: "Data must be an array." });
   }
-  
+
   try {
-    // Read existing data
-    let fileData;
-    try {
-      const fileContent = await fs.readFile(ROWS_FILE, 'utf8');
-      fileData = JSON.parse(fileContent);
-    } catch (e) {
-      fileData = { IBM: [], COMP: [] };
-    }
-    
-    // Update the specified side
-    fileData[side] = data;
-    // Per-side timestamp, so the UI can show when EACH side last changed rather
-    // than the whole file's mtime (which would make an IBM-only save also look
-    // like it touched COMP's data, since both sides live in one file).
-    fileData[`${side}Updated`] = new Date().toISOString();
-    
-    // Write back to file
-    await fs.writeFile(ROWS_FILE, JSON.stringify(fileData, null, 2));
+    await saveRows(side, data);
     console.log("✅ Successfully saved.", data.length, "rows for", side);
     res.json({ success: true, message: `Saved ${data.length} rows for ${side}.` });
   } catch (err) {
     console.error("❌ Error saving rows:", err);
+    res.status(500).json({ error: "Failed to save rows.", details: err.message });
+  }
+});
+
+// ---- Raw-CSV ingest ----
+// Lets the Mac Studio push audit_storage's CSV output with plain `curl`
+// instead of Node. Twice now (once earlier, once on the Sep 30 month-end
+// run) Node on that Mac lost the ability to reach the VM (EHOSTUNREACH)
+// while curl kept working, so parsing happens here, server-side, and the
+// Mac only needs to upload the file. Parsing rules are a port of
+// mams-automation/scripts/push-to-mams.js - keep the two in sync.
+const BYTES_PER_GB = 1024 ** 3;
+
+function toNumber(val) {
+  if (typeof val === "number" && Number.isFinite(val)) return val;
+  if (val == null) return 0;
+  let s = String(val).trim().replace(/\u00A0/g, "");
+  if (s === "") return 0;
+  if (s.includes(",") && !s.includes(".")) s = s.replace(/,/g, ".");
+  s = s.replace(/,/g, "");
+  const n = Number(s);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function deriveContent(side, loc) {
+  const L = String(loc || "").toLowerCase();
+  if (side === "IBM") {
+    const ibmPrefixes = [
+      "/volumes/snibmprod/prod_hr2",
+      "/volumes/snibmprod/media/hr",
+      "/volumes/snibmprod/media",
+      "/volumes/snibmprod/to_carbon",
+      "/volumes/snibmprod/from_carbon",
+    ];
+    return ibmPrefixes.some((p) => L.startsWith(p)) ? "System Files" : "";
+  }
+  const dellPrefixes = [
+    "/volumes/snibmfs5kprod/lost+found",
+    "/volumes/snibmfs5kprod/epr",
+    "/volumes/snibmfs5kprod/library",
+    "/volumes/snibmfs5kprod/snibmprod",
+    "/volumes/snibmfs5kprod/media/hr",
+    "/volumes/snibmfs5kprod/media",
+    "/volumes/snibmfs5kprod/prod_hr2",
+  ];
+  return dellPrefixes.some((p) => L.startsWith(p)) ? "System Files" : "";
+}
+
+function parseAuditCsv(text, side) {
+  const out = [];
+  for (const line of String(text).split(/\r?\n/)) {
+    if (!line.trim()) continue;
+    const idx = line.indexOf(",");
+    if (idx === -1) continue;
+    const rawBytes = line.slice(0, idx);
+    const loc = line.slice(idx + 1).trim();
+    if (/^total:?$/i.test(loc) || /^total:?$/i.test(rawBytes)) break;
+    const bytes = toNumber(rawBytes);
+    if (!Number.isFinite(bytes) || !loc || loc.toLowerCase() === "location") continue;
+    out.push({ location: loc, size_tb: bytes / BYTES_PER_GB, content: deriveContent(side, loc) });
+  }
+  return out;
+}
+
+app.post('/api/ingest/:side', express.text({ type: () => true, limit: '20mb' }), async (req, res) => {
+  const side = String(req.params.side || "").toUpperCase();
+  if (side !== "IBM" && side !== "COMP") {
+    return res.status(400).json({ error: "Invalid side. Use IBM or COMP." });
+  }
+  const rows = parseAuditCsv(typeof req.body === "string" ? req.body : "", side);
+  // Same safety as push-to-mams.js: a bad/empty upload must never wipe good data.
+  if (rows.length === 0) {
+    return res.status(400).json({ error: "Parsed 0 rows - NOT saving, existing data left untouched." });
+  }
+  try {
+    await saveRows(side, rows);
+    console.log("✅ Ingested", rows.length, "rows for", side, "(raw CSV)");
+    res.json({ success: true, message: `Saved ${rows.length} rows for ${side}.` });
+  } catch (err) {
+    console.error("❌ Error ingesting rows:", err);
     res.status(500).json({ error: "Failed to save rows.", details: err.message });
   }
 });

@@ -48,7 +48,26 @@ ls -lR /Volumes/snibmfs5kprod/prod_hr3 | grep -e .mxf -e .mov -e .wav -e .aiff -
 # ---- Added: push freshly-generated IBM.csv / COMP.csv to the MAMS Storage
 # ---- Audit web app, same effect as clicking Import in the browser.
 automation="/Users/postmams/Documents/scripts/audit_storage/mams-automation"
-echo 'Pushing IBM data to MAMS Storage Audit app'
-/usr/local/bin/node "$automation/scripts/push-to-mams.js" IBM "$loc/IBM.csv" >> "$automation/logs/push.log" 2>&1
-echo 'Pushing COMP data to MAMS Storage Audit app'
-/usr/local/bin/node "$automation/scripts/push-to-mams.js" COMP "$loc/COMP.csv" >> "$automation/logs/push.log" 2>&1
+# Uses plain curl (Apple-signed, kept working both times Node on this Mac
+# lost the ability to reach the VM with EHOSTUNREACH - incl. the Sep 30
+# month-end run) to upload the raw CSV; the STAR server does the parsing
+# (POST /api/ingest/:side). Retries for ~5 min before giving up.
+MAMS_API_URL="${MAMS_API_URL:-http://10.0.1.50:8104}"
+push_csv() {
+  side="$1"; file="$2"
+  echo "Pushing $side data to MAMS Storage Audit app"
+  curl --fail --silent --show-error --max-time 60 \
+       --retry 10 --retry-delay 30 --retry-all-errors \
+       -H "Content-Type: text/csv" --data-binary @"$file" \
+       "$MAMS_API_URL/api/ingest/$side" >> "$automation/logs/push.log" 2>&1
+  rc=$?
+  echo >> "$automation/logs/push.log"   # server's JSON reply has no trailing newline
+  if [ $rc -eq 0 ]; then
+    echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Pushed $side from $file via curl" >> "$automation/logs/push.log"
+  else
+    echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] PUSH FAILED for $side from $file via curl" >> "$automation/logs/push.log"
+    echo "PUSH FAILED for $side - see $automation/logs/push.log"
+  fi
+}
+push_csv IBM "$loc/IBM.csv"
+push_csv COMP "$loc/COMP.csv"

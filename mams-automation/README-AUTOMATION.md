@@ -150,3 +150,27 @@ inbox; on success the terminal prints `Email sent to: ...`.
 
 Everything above — the scan, the push, the daily usage refresh, and the
 monthly export/email — now runs unattended.
+
+
+## Why the Mac pushes with curl, not Node
+
+Twice now (once earlier, and again on the Sep 30 month-end run) Node.js on
+the Mac Studio lost the ability to reach the VM - every request failed with
+`connect EHOSTUNREACH 10.0.1.50:8104` - while `curl` and `nc` to the same
+address kept working. A reboot cleared it each time, and the unattended 2 AM
+cron run had no one to do that, so STAR silently kept stale data and the
+monthly email went out using it.
+
+`audit_storage ver2.sh` therefore uploads the raw CSVs with plain `curl` to
+`POST /api/ingest/IBM|COMP` (see server.js), and the server does the parsing.
+curl retries for ~5 minutes and logs a clear `Pushed ...` or `PUSH FAILED ...`
+line to `logs/push.log`.
+
+`scripts/push-to-mams.js` still works and is kept as a manual fallback, but
+its parsing rules are duplicated in server.js (`parseAuditCsv`) - if you
+change one, change the other.
+
+Manual push from the Mac (no Node needed):
+
+    curl --fail -H "Content-Type: text/csv" --data-binary @/Users/postmams/Documents/scripts/audit_storage/data/IBM.csv  http://10.0.1.50:8104/api/ingest/IBM
+    curl --fail -H "Content-Type: text/csv" --data-binary @/Users/postmams/Documents/scripts/audit_storage/data/COMP.csv http://10.0.1.50:8104/api/ingest/COMP
