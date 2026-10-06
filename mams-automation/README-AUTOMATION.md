@@ -105,6 +105,12 @@ Lives at `/srv/mams-storage-audit/mams-automation` on the VM, next to
 - `EMAIL_TO` — comma-separated recipients (`EMAIL_CC`/`EMAIL_BCC` optional)
 - `MAMS_API_URL` / `MAMS_DATA_DIR` — leave as-is if following the standard
   folder layout
+- `EMAIL_ALERT_TO` *(strongly recommended)* — the only address emailed when a
+  report is held (see below). If unset, nothing is emailed and the hold is
+  only written to `logs/monthly-report.log`. The report recipients are never
+  contacted about a held report.
+- `REPORT_MAX_DATA_AGE_HOURS` *(optional, default 24)* — how old the data may
+  be before the report is held.
 
 Scheduled in **`postmams`'s** crontab on the VM:
 ```cron
@@ -118,8 +124,34 @@ because this runs on Linux, not macOS.)
 cd /srv/mams-storage-audit/mams-automation
 node scripts/monthly-report.js
 ```
-Sends immediately using whatever data is currently in the app. Check your
-inbox; on success the terminal prints `Email sent to: ...`.
+Sends immediately if the data is fresh. Check your inbox; on success the
+terminal prints `Email sent to: ...`. Mid-month the data is weeks old, so a
+manual test run will be **held** by the stale-data guard (below) - add
+`--force` to send it anyway.
+
+### Stale-data guard
+Before building anything, the script checks when each of its four inputs was
+last written - the IBM and IBM FS5K folder scans (`IBMUpdated` / `COMPUpdated`
+in `data/rows.json`) and the two web-usage figures (`ibmUpdated` /
+`compUpdated` in `data/usage.json`). If any is older than
+`REPORT_MAX_DATA_AGE_HOURS` (default 24), or has no timestamp at all, the
+report is **held**:
+
+- nothing is sent to the report recipients, and no files are written to
+  `reports/` (so Report History never shows a report that wasn't sent)
+- an alert email listing exactly which inputs are stale (and how old) goes to
+  `EMAIL_ALERT_TO` only
+- the script exits with code 2 (0 = sent, 1 = error), and the reason is in
+  `logs/monthly-report.log`
+
+Once the data is refreshed, just re-run `node scripts/monthly-report.js`. To
+send despite stale data, run `node scripts/monthly-report.js --force` (a
+command-line flag only, so the cron job can never do this by accident) - the email then opens with a "Data freshness warning"
+section so recipients aren't misled.
+
+Why this exists: on Sep 30 2026 the Mac's push of the month-end scan failed,
+STAR kept the Sep 20 data, and the report was emailed using it with nothing to
+flag that.
 
 ## Troubleshooting notes learned the hard way
 - **`sudo crontab -e` vs `crontab -e`** — always use the latter for these

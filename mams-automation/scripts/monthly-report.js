@@ -38,6 +38,19 @@ const EMAIL_BCC = parseAddrs(process.env.EMAIL_BCC);
 const EMAIL_USER = process.env.EMAIL_USER; // e.g. yourname@gmail.com
 const EMAIL_PASS = process.env.EMAIL_PASS; // Gmail App Password (not your normal password)
 
+// Stale-data guard (see checkDataFreshness below). If any input to the report
+// is older than this when the script runs, the report is HELD and an alert is
+// sent instead. Month-end normally runs ~4-5h after the Mac pushes its scan and
+// ~2h after the daily usage refresh, so 24h leaves plenty of margin.
+const MAX_DATA_AGE_HOURS = Number(process.env.REPORT_MAX_DATA_AGE_HOURS) || 24;
+// The ONLY address emailed when a report is held. If unset, nothing is emailed
+// at all (the hold is just logged) - report recipients are never contacted.
+const EMAIL_ALERT_TO = parseAddrs(process.env.EMAIL_ALERT_TO);
+// --force sends even if data is stale, with a warning in the email. Deliberately
+// a command-line flag only (no env var): the cron job never passes it, and a
+// stray line in .env can't quietly switch the guard off.
+const FORCE = process.argv.includes("--force");
+
 // ---------- Helpers (ported from src/App.tsx) ----------
 const formatTB = (v) => (Math.round((v + Number.EPSILON) * 10000) / 10000).toFixed(4);
 
@@ -382,7 +395,77 @@ function timestampParts() {
   };
 }
 
-async function main() {
+// ---- Stale-data guard ----
+// On Sep 30 2026 the Mac's push of the month-end scan failed (the Mac could not
+// reach the VM), STAR kept the Sep 20 data, and this script happily emailed
+// that as the month-end report. rows.json / usage.json already record when each
+// side was last written, so check those before building anything.
+function checkDataFreshness({ rows, usage, now = new Date(), maxAgeHours = MAX_DATA_AGE_HOURS }) {
+  const inputs = [
+    { label: "IBM folder scan", ts: rows && rows.IBMUpdated },
+    { label: "IBM FS5K folder scan", ts: rows && rows.COMPUpdated },
+    { label: "IBM web usage", ts: usage && usage.ibmUpdated },
+    { label: "IBM FS5K web usage", ts: usage && usage.compUpdated },
+  ];
+  return inputs.map(({ label, ts }) => {
+    const t = ts ? Date.parse(ts) : NaN;
+    if (!Number.isFinite(t)) {
+      // No timestamp means freshness can't be proven, so don't treat it as fresh.
+      return { label, updatedAt: null, ageHours: null, fresh: false };
+    }
+    const ageHours = (now.getTime() - t) / 36e5;
+    return { label, updatedAt: new Date(t).toISOString(), ageHours, fresh: ageHours <= maxAgeHours };
+  });
+}
+
+function describeAge(c) {
+  if (c.updatedAt == null) return `${c.label}: no update time recorded`;
+  const age = c.ageHours >= 48 ? `${(c.ageHours / 24).toFixed(1)} days ago` : `${c.ageHours.toFixed(1)} hours ago`;
+  return `${c.label}: last updated ${c.updatedAt} (${age})`;
+}
+
+function makeTransporter() {
+  return nodemailer.createTransport({
+    host: "smtp.gmail.com",
+    port: 587,
+    secure: false,      // upgrade via STARTTLS
+    requireTLS: true,
+    family: 4,          // force IPv4 - this VM's IPv6 route to Google is broken
+    auth: { user: EMAIL_USER, pass: EMAIL_PASS },
+  });
+}
+
+async function sendHeldAlert({ stale, monthLabel }) {
+  if (EMAIL_ALERT_TO.length === 0) {
+    console.error("EMAIL_ALERT_TO is not set in .env - NO alert email sent. The report is held; set EMAIL_ALERT_TO so you are told when this happens.");
+    return;
+  }
+  const to = EMAIL_ALERT_TO;
+  const text = [
+    `The STAR monthly report for ${monthLabel} was NOT sent.`,
+    ``,
+    `It was held because data it is built from is out of date (limit: ${MAX_DATA_AGE_HOURS} hours at the time it ran):`,
+    ...stale.map((c) => `  - ${describeAge(c)}`),
+    ``,
+    `What to check:`,
+    `  - Folder scan: on the Mac Studio, audit_storage ver2.sh pushes it - see logs/push.log and logs/cron_log.txt (README-AUTOMATION.md, Part 1).`,
+    `  - Web usage: the daily fetch-usage.js job on the VM (README-AUTOMATION.md, Part 2).`,
+    ``,
+    `Once the data is refreshed, re-run it on the VM:`,
+    `  cd /srv/mams-storage-audit/mams-automation && node scripts/monthly-report.js`,
+    `Or send it anyway, with a warning at the top of the email:`,
+    `  node scripts/monthly-report.js --force`,
+  ].join("\n");
+  await makeTransporter().sendMail({
+    from: `"STAR Notifications" <${EMAIL_USER}>`,
+    to: to.join(", "),
+    subject: `STAR Monthly Report HELD - storage data is out of date (${monthLabel})`,
+    text,
+  });
+  console.log(`Held-report alert sent to: ${to.join(", ")}`);
+}
+
+async function main({ force = FORCE, now = new Date() } = {}) {
   if (!EMAIL_USER || !EMAIL_PASS) {
     throw new Error("EMAIL_USER / EMAIL_PASS are not set. Copy .env.example to .env and fill them in.");
   }
@@ -403,6 +486,23 @@ async function main() {
 
   if (ibmRows.length === 0 && dellRows.length === 0) {
     console.warn("WARNING: both IBM and COMP have zero rows. Did the CSV import run this month? Continuing anyway.");
+  }
+
+  // ---- 0. Stale-data guard: runs BEFORE any file is written, so a held run
+  // leaves nothing behind in reports/ (which feeds the app's Report History). ----
+  const monthLabel = now.toLocaleString("en-US", { month: "long", year: "numeric" });
+  const stale = checkDataFreshness({ rows, usage, now }).filter((c) => !c.fresh);
+  let freshnessNotice = "";
+  if (stale.length > 0) {
+    console.error(`Data is out of date (limit ${MAX_DATA_AGE_HOURS}h):`);
+    stale.forEach((c) => console.error(`  - ${describeAge(c)}`));
+    if (!force) {
+      console.error("Report HELD - not sending. Re-run with --force to send anyway.");
+      await sendHeldAlert({ stale, monthLabel });
+      return 2;
+    }
+    console.warn("--force given: sending with a data-freshness warning.");
+    freshnessNotice = `**Data freshness warning**\n\n${stale.map((c) => `- ${describeAge(c)}`).join("\n")}\n\nFigures below may not reflect current storage.\n\n`;
   }
 
   // ---- 1. Build the Excel-compatible workbook (same trick the browser uses) ----
@@ -430,11 +530,11 @@ async function main() {
     console.error("AI summary generation failed, sending the report without it:", e.message);
     summary = `(AI summary unavailable this run: ${e.message})`;
   }
+  summary = freshnessNotice + summary;
   summary += buildTakeaways(usageIbm, usageDell, rootTotal(ibmRows, "/Volumes/snibmprod"), rootTotal(dellRows, "/Volumes/snibmfs5kprod"), ibmRows, dellRows);
   // The formatted summary goes in the EMAIL BODY (below), not as an attachment -
   // HTML attachments are commonly blocked by corporate mail filters. A local copy
   // is still written to REPORTS_DIR for reference/archiving.
-  const monthLabel = new Date().toLocaleString("en-US", { month: "long", year: "numeric" });
   const reportHtml = buildReportHtml({
     ibmUsage: usageIbm,
     dellUsage: usageDell,
@@ -449,14 +549,7 @@ async function main() {
   console.log(`Wrote ${summaryPath}`);
 
   // ---- 3. Email: formatted summary in the body, Excel attached ----
-  const transporter = nodemailer.createTransport({
-    host: "smtp.gmail.com",
-    port: 587,
-    secure: false,      // upgrade via STARTTLS
-    requireTLS: true,
-    family: 4,          // force IPv4 - this VM's IPv6 route to Google is broken
-    auth: { user: EMAIL_USER, pass: EMAIL_PASS },
-  });
+  const transporter = makeTransporter();
 
   await transporter.sendMail({
     from: `"STAR Notifications" <${EMAIL_USER}>`,
@@ -478,9 +571,17 @@ async function main() {
   if (EMAIL_CC.length) console.log(`            cc: ${EMAIL_CC.join(", ")}`);
   if (EMAIL_BCC.length) console.log(`           bcc: ${EMAIL_BCC.join(", ")}`);
   console.log(`[${new Date().toISOString()}] Done.`);
+  return 0;
 }
 
-main().catch((err) => {
-  console.error("Monthly report FAILED:", err);
-  process.exit(1);
-});
+// Exit codes: 0 = sent, 1 = error, 2 = held because data was stale.
+if (require.main === module) {
+  main()
+    .then((code) => process.exit(code || 0))
+    .catch((err) => {
+      console.error("Monthly report FAILED:", err);
+      process.exit(1);
+    });
+}
+
+module.exports = { main, checkDataFreshness };
