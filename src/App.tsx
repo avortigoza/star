@@ -344,6 +344,9 @@ function Landing({ onGetStarted, branding }: { onGetStarted: () => void; brandin
         <Star aria-hidden className={`pointer-events-none absolute -right-24 -top-16 hidden h-[620px] w-[620px] rotate-12 opacity-[.07] lg:block ${ac}`} fill="currentColor" strokeLinejoin="round" />
         <div className="relative mx-auto grid w-full max-w-[1800px] flex-1 content-center gap-12 px-6 pt-12 pb-16 lg:grid-cols-[1fr_1.15fr] lg:items-center lg:px-12 lg:pb-24">
           <div>
+            {branding.taglineImageDataUrl && (
+              <TrimmedImg src={branding.taglineImageDataUrl} alt="" className="mb-5 h-8 object-contain object-left" />
+            )}
             {branding.logoDataUrl && branding.logoIncludesText ? (
               <TrimmedImg src={branding.logoDataUrl} alt={branding.appName} className="mb-3 max-h-28 object-contain object-left" />
             ) : branding.appNameImageDataUrl ? (
@@ -351,13 +354,9 @@ function Landing({ onGetStarted, branding }: { onGetStarted: () => void; brandin
             ) : (
               <h1 className={`text-6xl font-extrabold tracking-tight sm:text-7xl xl:text-8xl star-rise ${gradText}`}>{branding.appName}</h1>
             )}
-            {branding.taglineImageDataUrl ? (
-              <TrimmedImg src={branding.taglineImageDataUrl} alt={branding.tagline} className="mt-3 h-12 max-w-full object-contain object-left sm:h-14 xl:h-16" />
-            ) : (
-              <p className={`mt-2 whitespace-pre-line text-3xl font-extrabold leading-tight tracking-tight sm:text-4xl xl:text-5xl ${hd}`}>
-                {(branding.tagline || "Storage Tracking & Audit Reporting").replace(" & ", " &\n")}
-              </p>
-            )}
+            <p className={`mt-2 whitespace-pre-line text-3xl font-extrabold leading-tight tracking-tight sm:text-4xl xl:text-5xl ${hd}`}>
+              {(branding.tagline || "Storage Tracking & Audit Reporting").replace(" & ", " &\n")}
+            </p>
             <p className="mt-5 max-w-md text-lg text-gray-600 dark:text-gray-300 xl:max-w-xl xl:text-xl">
               Monitor storage capacity, usage, and audit reports across your MAMS storage infrastructure.
             </p>
