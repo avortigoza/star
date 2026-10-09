@@ -1307,20 +1307,6 @@ export default function App() {
     document.title = branding.tagline ? `${name} - ${branding.tagline}` : name;
   }, [branding.appName, branding.tagline]);
 
-  // Tab icon: the uploaded logo when it's icon-only, otherwise the bundled
-  // star icon. (?v= busts the browsers' aggressive favicon cache.)
-  useEffect(() => {
-    const href = branding.logoDataUrl && !branding.logoIncludesText ? branding.logoDataUrl : "/favicon.png?v=2";
-    let link = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
-    if (!link) {
-      link = document.createElement("link");
-      link.rel = "icon";
-      document.head.appendChild(link);
-    }
-    link.type = "image/png";
-    link.href = href;
-  }, [branding.logoDataUrl, branding.logoIncludesText]);
-
   // Closes the header's "more actions" dropdown on an outside click.
   useEffect(() => {
     if (!showMoreMenu) return;
