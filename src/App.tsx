@@ -135,6 +135,42 @@ function Login({ onLogin, branding, asModal, onClose }: { onLogin: (username: st
 // draws a trend line - the mockup shows used vs. free capacity instead.
 type LandingBranding = { appName: string; accentColor: string; tagline: string; logoDataUrl: string | null; logoIncludesText: boolean; appNameImageDataUrl: string | null; taglineImageDataUrl: string | null };
 
+// Uploaded logo / tagline images often carry transparent padding, which
+// makes their left edges miss each other on the hero. This trims the
+// transparent margin (client-side, via canvas) so images line up flush.
+function TrimmedImg({ src, alt, className }: { src: string; alt: string; className?: string }) {
+  const [out, setOut] = useState(src);
+  useEffect(() => {
+    let cancelled = false;
+    setOut(src);
+    const img = new Image();
+    img.onload = () => {
+      try {
+        const w = img.naturalWidth, h = img.naturalHeight;
+        if (!w || !h) return;
+        const c = document.createElement("canvas");
+        c.width = w; c.height = h;
+        const ctx = c.getContext("2d");
+        if (!ctx) return;
+        ctx.drawImage(img, 0, 0);
+        const d = ctx.getImageData(0, 0, w, h).data;
+        let x0 = w, y0 = h, x1 = -1, y1 = -1;
+        for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+          if (d[(y * w + x) * 4 + 3] > 12) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+        }
+        if (x1 < 0 || (x0 === 0 && y0 === 0 && x1 === w - 1 && y1 === h - 1)) return;
+        const t = document.createElement("canvas");
+        t.width = x1 - x0 + 1; t.height = y1 - y0 + 1;
+        t.getContext("2d")!.drawImage(c, x0, y0, t.width, t.height, 0, 0, t.width, t.height);
+        if (!cancelled) setOut(t.toDataURL("image/png"));
+      } catch (e) { /* tainted or unsupported - keep original */ }
+    };
+    img.src = src;
+    return () => { cancelled = true; };
+  }, [src]);
+  return <img src={out} alt={alt} className={className} />;
+}
+
 function Landing({ onGetStarted, branding }: { onGetStarted: () => void; branding: LandingBranding }) {
   const [usage, setUsage] = useState<{ ibm?: any; comp?: any } | null>(null);
   const [reports, setReports] = useState<any[] | null>(null);
@@ -309,14 +345,14 @@ function Landing({ onGetStarted, branding }: { onGetStarted: () => void; brandin
         <div className="relative mx-auto grid w-full max-w-[1800px] flex-1 content-center gap-12 px-6 pt-12 pb-16 lg:grid-cols-[1fr_1.15fr] lg:items-center lg:px-12 lg:pb-24">
           <div>
             {branding.logoDataUrl && branding.logoIncludesText ? (
-              <img src={branding.logoDataUrl} alt={branding.appName} className="mb-3 max-h-28 object-contain" />
+              <TrimmedImg src={branding.logoDataUrl} alt={branding.appName} className="mb-3 max-h-28 object-contain object-left" />
             ) : branding.appNameImageDataUrl ? (
-              <img src={branding.appNameImageDataUrl} alt={branding.appName} className="mb-3 h-16 object-contain" />
+              <TrimmedImg src={branding.appNameImageDataUrl} alt={branding.appName} className="mb-3 h-16 object-contain object-left" />
             ) : (
               <h1 className={`text-6xl font-extrabold tracking-tight sm:text-7xl xl:text-8xl star-rise ${gradText}`}>{branding.appName}</h1>
             )}
             {branding.taglineImageDataUrl ? (
-              <img src={branding.taglineImageDataUrl} alt={branding.tagline} className="mt-3 h-12 max-w-full object-contain object-left sm:h-14 xl:h-16" />
+              <TrimmedImg src={branding.taglineImageDataUrl} alt={branding.tagline} className="mt-3 h-12 max-w-full object-contain object-left sm:h-14 xl:h-16" />
             ) : (
               <p className={`mt-2 whitespace-pre-line text-3xl font-extrabold leading-tight tracking-tight sm:text-4xl xl:text-5xl ${hd}`}>
                 {(branding.tagline || "Storage Tracking & Audit Reporting").replace(" & ", " &\n")}
