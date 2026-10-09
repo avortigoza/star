@@ -342,7 +342,7 @@ function Landing({ onGetStarted, branding }: { onGetStarted: () => void; brandin
         <div aria-hidden className="star-float pointer-events-none absolute -left-24 top-24 h-80 w-80 rounded-full blur-3xl" style={{ backgroundColor: tint("22") }} />
         <div aria-hidden className="star-float pointer-events-none absolute right-1/4 -bottom-20 h-72 w-72 rounded-full blur-3xl" style={{ backgroundColor: tint("1a"), animationDelay: "-4s" }} />
         <Star aria-hidden className={`pointer-events-none absolute -right-24 -top-16 hidden h-[620px] w-[620px] rotate-12 opacity-[.07] lg:block ${ac}`} fill="currentColor" strokeLinejoin="round" />
-        <div className="relative mx-auto grid w-full max-w-[1800px] flex-1 content-center gap-12 px-6 pt-12 pb-16 lg:grid-cols-[1fr_1.15fr] lg:items-center lg:px-12 lg:pb-24">
+        <div className="relative mx-auto grid w-full max-w-[1800px] flex-1 content-center gap-12 px-6 pt-12 pb-16 lg:grid-cols-[minmax(0,34rem)_minmax(0,64rem)] lg:gap-14 lg:items-center lg:px-12 lg:pb-24">
           <div>
             {branding.logoDataUrl && branding.logoIncludesText ? (
               <TrimmedImg src={branding.logoDataUrl} alt={branding.appName} className="mb-3 max-h-28 object-contain object-left" />
@@ -375,7 +375,7 @@ function Landing({ onGetStarted, branding }: { onGetStarted: () => void; brandin
           </div>
 
           {/* Dashboard mockup (live data) */}
-          <div className="relative lg:pr-10">
+          <div className="relative lg:pr-6">
             <div aria-hidden className="absolute -right-6 top-6 hidden h-72 w-72 rounded-full blur-3xl sm:block" style={{ backgroundColor: tint("30") }} />
             <div className={`${card} relative flex overflow-hidden shadow-xl`}>
               <aside className="hidden w-36 shrink-0 border-r border-gray-100 p-4 dark:border-gray-800 sm:block">
