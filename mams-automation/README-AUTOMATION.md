@@ -96,6 +96,38 @@ key — the job will fail with `Permission denied (publickey,...)`. If
 adding to `/etc/cron.allow` (`sudo`, then confirm the file is world-readable —
 `chmod 644 /etc/cron.allow` — or cron can't even check who's allowed).
 
+## Part 2b — VM: pull the scan CSVs from the Mac (backup for the Mac's push)
+
+The Mac normally pushes `IBM.csv` / `COMP.csv` to STAR itself at the end of the
+scan (Part 1). That push runs Node *on the Mac* and has been seen to fail
+intermittently with `EHOSTUNREACH` while the VM -> Mac SSH path (Part 2) keeps
+working. `scripts/pull-from-mac.js` closes the gap by going the other way: the
+VM SSHes to the Mac, reads the CSVs and imports them through the same
+`push-to-mams.js` code.
+
+- Does nothing while the scan is still running on the Mac (so it never imports
+  a half-written CSV).
+- Only imports a CSV that is newer than the one it imported last time
+  (remembered in `mams-automation/.pull-state.json`, gitignored). Safe to run
+  hourly.
+- Exit codes: `0` ok / nothing new, `1` error, `2` scan still running.
+- Options: `--dry-run` (show what it would do), `--force` (re-import even if
+  unchanged).
+- Optional `.env` setting: `MAC_AUDIT_DATA_DIR` (default
+  `/Users/postmams/Documents/scripts/audit_storage/data`). Host/user come from
+  `MAC_STUDIO_HOST` / `MAC_STUDIO_USER`, same as Part 2.
+
+Scheduled in **`postmams`'s** crontab on the VM:
+```cron
+10 * * * * cd /srv/mams-storage-audit/mams-automation && /usr/bin/node scripts/pull-from-mac.js >> logs/pull-from-mac.log 2>&1
+```
+Try it by hand first: `node scripts/pull-from-mac.js --dry-run`.
+
+Note the month-end timing: the scan starts at midnight and takes ~5 hours, so
+the pull imports it at the first hourly run after it finishes. The 10:00
+monthly report is still held by the stale-data guard if the data is not in by
+then.
+
 ## Part 3 — VM: monthly Excel + AI summary email
 
 Lives at `/srv/mams-storage-audit/mams-automation` on the VM, next to

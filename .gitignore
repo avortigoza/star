@@ -36,3 +36,6 @@ backups/
 # Old Makefile backup created during earlier troubleshooting, if present
 Makefile.bak
 reports/
+
+# State kept by pull-from-mac.js (last imported CSV times)
+mams-automation/.pull-state.json
