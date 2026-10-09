@@ -280,8 +280,8 @@ function Landing({ onGetStarted, branding }: { onGetStarted: () => void; brandin
   const lift = "transition duration-300 hover:-translate-y-1 hover:shadow-xl";
 
   return (
-    <div className="min-h-screen bg-white text-gray-900 dark:bg-gray-950 dark:text-gray-100" style={{ "--ac": accent, "--acl": lighten(accent, 0.45), "--hc": accentDark } as React.CSSProperties}>
-      <style>{`@keyframes star-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-14px)}}@keyframes star-rise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}.star-float{animation:star-float 9s ease-in-out infinite}.star-rise{animation:star-rise .7s ease-out both}`}</style>
+    <div className="star-landing min-h-screen bg-white text-gray-900 dark:bg-gray-950 dark:text-gray-100" style={{ "--ac": accent, "--acl": lighten(accent, 0.45), "--hc": accentDark } as React.CSSProperties}>
+      <style>{`@keyframes star-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-14px)}}@keyframes star-rise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}.star-float{animation:star-float 9s ease-in-out infinite}.star-rise{animation:star-rise .7s ease-out both}.star-landing{--z:1}@media(min-width:1800px){.star-landing{--z:1.15;zoom:1.15}}@media(min-width:2200px){.star-landing{--z:1.4;zoom:1.4}}@media(min-width:2600px){.star-landing{--z:1.65;zoom:1.65}}@media(min-width:3000px){.star-landing{--z:1.7;zoom:1.7}}`}</style>
       {/* ===== Nav ===== */}
       <nav className="sticky top-0 z-20 border-b border-gray-200 bg-white/85 backdrop-blur dark:border-gray-800 dark:bg-gray-950/85">
         <div className="mx-auto flex max-w-[1800px] items-center justify-between px-6 lg:px-12">
@@ -301,20 +301,13 @@ function Landing({ onGetStarted, branding }: { onGetStarted: () => void; brandin
       </nav>
 
       {/* ===== Hero ===== */}
-      <section id="overview" className="relative flex min-h-[calc(100svh-61px)] flex-col overflow-hidden" style={{ background: `radial-gradient(ellipse at 75% 20%, ${tint("1f")}, transparent 60%)` }}>
+      <section id="overview" className="relative flex min-h-[calc(100svh/var(--z)-61px)] flex-col overflow-hidden" style={{ background: `radial-gradient(ellipse at 75% 20%, ${tint("1f")}, transparent 60%)` }}>
         <div aria-hidden className="pointer-events-none absolute inset-0 opacity-60 dark:opacity-40" style={{ backgroundImage: `radial-gradient(${accent}40 1px, transparent 1px)`, backgroundSize: "26px 26px", WebkitMaskImage: "linear-gradient(to bottom, black 30%, transparent 95%)", maskImage: "linear-gradient(to bottom, black 30%, transparent 95%)" }} />
         <div aria-hidden className="star-float pointer-events-none absolute -left-24 top-24 h-80 w-80 rounded-full blur-3xl" style={{ backgroundColor: tint("22") }} />
         <div aria-hidden className="star-float pointer-events-none absolute right-1/4 -bottom-20 h-72 w-72 rounded-full blur-3xl" style={{ backgroundColor: tint("1a"), animationDelay: "-4s" }} />
         <Star aria-hidden className={`pointer-events-none absolute -right-24 -top-16 hidden h-[620px] w-[620px] rotate-12 opacity-[.07] lg:block ${ac}`} fill="currentColor" strokeLinejoin="round" />
         <div className="relative mx-auto grid w-full max-w-[1800px] flex-1 content-center gap-12 px-6 pt-10 pb-16 lg:grid-cols-[1fr_1.2fr] lg:items-center lg:px-12 lg:pb-20">
           <div>
-            {branding.taglineImageDataUrl ? (
-              <img src={branding.taglineImageDataUrl} alt={branding.tagline} className="mb-5 h-8 object-contain" />
-            ) : (
-              branding.tagline && (
-                <span className={`mb-6 inline-block rounded-full px-4 py-1.5 text-sm font-semibold ${ac}`} style={{ backgroundColor: tint("1a") }}>{branding.tagline}</span>
-              )
-            )}
             {branding.logoDataUrl && branding.logoIncludesText ? (
               <img src={branding.logoDataUrl} alt={branding.appName} className="mb-3 max-h-28 object-contain" />
             ) : branding.appNameImageDataUrl ? (
@@ -322,9 +315,13 @@ function Landing({ onGetStarted, branding }: { onGetStarted: () => void; brandin
             ) : (
               <h1 className={`text-7xl font-extrabold tracking-tight sm:text-8xl 2xl:text-9xl star-rise ${gradText}`}>{branding.appName}</h1>
             )}
-            <p className={`mt-3 text-4xl font-extrabold leading-tight tracking-tight sm:text-5xl xl:text-6xl ${hd}`}>
-              Storage Tracking &amp;<br />Audit Reporting
-            </p>
+            {branding.taglineImageDataUrl ? (
+              <img src={branding.taglineImageDataUrl} alt={branding.tagline} className="mt-4 h-14 max-w-full object-contain object-left sm:h-16 xl:h-20" />
+            ) : (
+              <p className={`mt-3 max-w-2xl text-4xl font-extrabold leading-tight tracking-tight sm:text-5xl xl:text-6xl ${hd}`}>
+                {branding.tagline || "Storage Tracking & Audit Reporting"}
+              </p>
+            )}
             <p className="mt-6 max-w-xl text-lg text-gray-600 dark:text-gray-300 xl:max-w-2xl xl:text-2xl xl:leading-9">
               Monitor storage capacity, usage, and audit reports across your MAMS storage infrastructure.
             </p>
