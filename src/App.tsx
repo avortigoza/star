@@ -215,14 +215,6 @@ function Landing({ onGetStarted, branding }: { onGetStarted: () => void; brandin
     { value: totalCap ? `${fmt(totalCap)} TB` : "—", label: "Capacity tracked" },
   ];
 
-  const totalUsed = volumes.reduce((s, v) => s + v.used, 0);
-  const heroStats = [
-    { icon: Database, value: totalCap ? `${fmt(totalCap)} TB` : "—", label: "Total capacity tracked" },
-    { icon: BarChart3, value: haveData ? `${fmt(totalUsed)} TB` : "—", label: haveData && totalCap ? `In use · ${((totalUsed / totalCap) * 100).toFixed(1)}% of capacity` : "In use" },
-    { icon: Cloud, value: haveData ? `${fmt(Math.max(totalCap - totalUsed, 0))} TB` : "—", label: "Free across both volumes" },
-    { icon: Zap, value: "Daily", label: "Automatic usage refresh" },
-  ];
-
   const checks = ["Live capacity", "Monthly reports", "Role-based access"];
 
   const NavLogo = ({ size = 28 }: { size?: number }) => (
@@ -253,7 +245,7 @@ function Landing({ onGetStarted, branding }: { onGetStarted: () => void; brandin
   const card = "rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900";
 
   // Ring gauge used in the hero mockup.
-  const Ring = ({ pct, has, size = 96 }: { pct: number; has: boolean; size?: number }) => {
+  const Ring = ({ pct, has, size = 76 }: { pct: number; has: boolean; size?: number }) => {
     const r = size / 2 - 7;
     const c = 2 * Math.PI * r;
     return (
@@ -262,7 +254,7 @@ function Landing({ onGetStarted, branding }: { onGetStarted: () => void; brandin
           <circle cx={size / 2} cy={size / 2} r={r} fill="none" strokeWidth="7" className="stroke-gray-200 dark:stroke-gray-700" />
           <circle cx={size / 2} cy={size / 2} r={r} fill="none" strokeWidth="7" strokeLinecap="round" stroke={pct >= 90 ? "#f59e0b" : accent} strokeDasharray={c} strokeDashoffset={c * (1 - (has ? Math.min(pct, 100) : 0) / 100)} style={{ transition: "stroke-dashoffset 1s ease" }} />
         </svg>
-        <div className="absolute inset-0 flex items-center justify-center text-base font-bold">{has ? `${Math.round(pct)}%` : "—"}</div>
+        <div className="absolute inset-0 flex items-center justify-center text-sm font-bold">{has ? `${Math.round(pct)}%` : "—"}</div>
       </div>
     );
   };
@@ -281,7 +273,7 @@ function Landing({ onGetStarted, branding }: { onGetStarted: () => void; brandin
 
   return (
     <div className="star-landing min-h-screen bg-white text-gray-900 dark:bg-gray-950 dark:text-gray-100" style={{ "--ac": accent, "--acl": lighten(accent, 0.45), "--hc": accentDark } as React.CSSProperties}>
-      <style>{`@keyframes star-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-14px)}}@keyframes star-rise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}.star-float{animation:star-float 9s ease-in-out infinite}.star-rise{animation:star-rise .7s ease-out both}.star-landing{--z:1}@media(min-width:1800px){.star-landing{--z:1.15;zoom:1.15}}@media(min-width:2200px){.star-landing{--z:1.4;zoom:1.4}}@media(min-width:2600px){.star-landing{--z:1.65;zoom:1.65}}@media(min-width:3000px){.star-landing{--z:1.7;zoom:1.7}}`}</style>
+      <style>{`@keyframes star-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-14px)}}@keyframes star-rise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}.star-float{animation:star-float 9s ease-in-out infinite}.star-rise{animation:star-rise .7s ease-out both}.star-landing{--z:1}@media(min-width:1800px){.star-landing{--z:1.1;zoom:1.1}}@media(min-width:2200px){.star-landing{--z:1.25;zoom:1.25}}@media(min-width:2800px){.star-landing{--z:1.4;zoom:1.4}}`}</style>
       {/* ===== Nav ===== */}
       <nav className="sticky top-0 z-20 border-b border-gray-200 bg-white/85 backdrop-blur dark:border-gray-800 dark:bg-gray-950/85">
         <div className="mx-auto flex max-w-[1800px] items-center justify-between px-6 lg:px-12">
@@ -301,42 +293,42 @@ function Landing({ onGetStarted, branding }: { onGetStarted: () => void; brandin
       </nav>
 
       {/* ===== Hero ===== */}
-      <section id="overview" className="relative flex min-h-[calc(100svh/var(--z)-61px)] flex-col overflow-hidden" style={{ background: `radial-gradient(ellipse at 75% 20%, ${tint("1f")}, transparent 60%)` }}>
+      <section id="overview" className="relative flex min-h-[calc(100svh/var(--z)-61px)] items-center overflow-hidden" style={{ background: `radial-gradient(ellipse at 75% 20%, ${tint("1f")}, transparent 60%)` }}>
         <div aria-hidden className="pointer-events-none absolute inset-0 opacity-60 dark:opacity-40" style={{ backgroundImage: `radial-gradient(${accent}40 1px, transparent 1px)`, backgroundSize: "26px 26px", WebkitMaskImage: "linear-gradient(to bottom, black 30%, transparent 95%)", maskImage: "linear-gradient(to bottom, black 30%, transparent 95%)" }} />
         <div aria-hidden className="star-float pointer-events-none absolute -left-24 top-24 h-80 w-80 rounded-full blur-3xl" style={{ backgroundColor: tint("22") }} />
         <div aria-hidden className="star-float pointer-events-none absolute right-1/4 -bottom-20 h-72 w-72 rounded-full blur-3xl" style={{ backgroundColor: tint("1a"), animationDelay: "-4s" }} />
         <Star aria-hidden className={`pointer-events-none absolute -right-24 -top-16 hidden h-[620px] w-[620px] rotate-12 opacity-[.07] lg:block ${ac}`} fill="currentColor" strokeLinejoin="round" />
-        <div className="relative mx-auto grid w-full max-w-[1800px] flex-1 content-center gap-12 px-6 pt-10 pb-16 lg:grid-cols-[1fr_1.2fr] lg:items-center lg:px-12 lg:pb-20">
+        <div className="relative mx-auto grid w-full max-w-[1800px] gap-12 px-6 lg:px-12 pt-16 pb-20 lg:grid-cols-[1fr_1.15fr] lg:items-center lg:pb-28">
           <div>
             {branding.logoDataUrl && branding.logoIncludesText ? (
               <img src={branding.logoDataUrl} alt={branding.appName} className="mb-3 max-h-28 object-contain" />
             ) : branding.appNameImageDataUrl ? (
               <img src={branding.appNameImageDataUrl} alt={branding.appName} className="mb-3 h-16 object-contain" />
             ) : (
-              <h1 className={`text-7xl font-extrabold tracking-tight sm:text-8xl 2xl:text-9xl star-rise ${gradText}`}>{branding.appName}</h1>
+              <h1 className={`text-6xl font-extrabold tracking-tight sm:text-7xl xl:text-8xl star-rise ${gradText}`}>{branding.appName}</h1>
             )}
             {branding.taglineImageDataUrl ? (
-              <img src={branding.taglineImageDataUrl} alt={branding.tagline} className="mt-4 h-14 max-w-full object-contain object-left sm:h-16 xl:h-20" />
+              <img src={branding.taglineImageDataUrl} alt={branding.tagline} className="mt-3 h-12 max-w-full object-contain object-left sm:h-14 xl:h-16" />
             ) : (
-              <p className={`mt-3 max-w-2xl text-4xl font-extrabold leading-tight tracking-tight sm:text-5xl xl:text-6xl ${hd}`}>
-                {branding.tagline || "Storage Tracking & Audit Reporting"}
+              <p className={`mt-2 whitespace-pre-line text-3xl font-extrabold leading-tight tracking-tight sm:text-4xl xl:text-5xl ${hd}`}>
+                {(branding.tagline || "Storage Tracking & Audit Reporting").replace(" & ", " &\n")}
               </p>
             )}
-            <p className="mt-6 max-w-xl text-lg text-gray-600 dark:text-gray-300 xl:max-w-2xl xl:text-2xl xl:leading-9">
+            <p className="mt-5 max-w-md text-lg text-gray-600 dark:text-gray-300 xl:max-w-xl xl:text-xl">
               Monitor storage capacity, usage, and audit reports across your MAMS storage infrastructure.
             </p>
-            <div className="mt-10 flex flex-wrap items-center gap-4">
-              <button onClick={onGetStarted} className="inline-flex items-center gap-2 rounded-full px-8 py-4 text-base font-semibold text-white shadow-md transition hover:brightness-110 active:scale-[.98]" style={{ backgroundColor: accent }}>
+            <div className="mt-8 flex flex-wrap items-center gap-3">
+              <button onClick={onGetStarted} className="inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold text-white shadow-md transition hover:brightness-110 active:scale-[.98]" style={{ backgroundColor: accent }}>
                 Sign In <ArrowRight className="h-4 w-4" />
               </button>
-              <a href="/api/v1/docs" className="inline-flex items-center gap-2 rounded-full border border-gray-300 bg-white px-8 py-4 text-base font-semibold text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800">
+              <a href="/api/v1/docs" className="inline-flex items-center gap-2 rounded-full border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800">
                 <Code2 className="h-5 w-5" /> API Docs
               </a>
             </div>
-            <ul className="mt-10 flex flex-wrap gap-x-8 gap-y-3 text-base font-medium text-gray-600 dark:text-gray-400">
+            <ul className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-sm font-medium text-gray-600 dark:text-gray-400">
               {checks.map((c) => (
                 <li key={c} className="flex items-center gap-2">
-                  <CheckCircle2 className={`h-5 w-5 ${ac}`} /> {c}
+                  <CheckCircle2 className={`h-4 w-4 ${ac}`} /> {c}
                 </li>
               ))}
             </ul>
@@ -346,105 +338,72 @@ function Landing({ onGetStarted, branding }: { onGetStarted: () => void; brandin
           <div className="relative lg:pr-10">
             <div aria-hidden className="absolute -right-6 top-6 hidden h-72 w-72 rounded-full blur-3xl sm:block" style={{ backgroundColor: tint("30") }} />
             <div className={`${card} relative flex overflow-hidden shadow-xl`}>
-              <aside className="hidden w-44 shrink-0 sm:block lg:hidden min-[1600px]:block border-r border-gray-100 p-5 dark:border-gray-800">
-                <div className="mb-6"><Wordmark size={22} text="text-base" /></div>
+              <aside className="hidden w-36 shrink-0 border-r border-gray-100 p-4 dark:border-gray-800 sm:block">
+                <div className="mb-5"><Wordmark size={18} text="text-sm" /></div>
                 {[{ icon: LayoutDashboard, label: "Dashboard", active: true }, { icon: Folder, label: "Folders" }, { icon: FileText, label: "Reports" }, { icon: Settings, label: "Settings" }].map((i) => (
-                  <div key={i.label} className={`mb-1.5 flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium ${i.active ? ac : "text-gray-500 dark:text-gray-400"}`} style={i.active ? { backgroundColor: tint("1a") } : undefined}>
-                    <i.icon className="h-4 w-4" /> {i.label}
+                  <div key={i.label} className={`mb-1 flex items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-medium ${i.active ? ac : "text-gray-500 dark:text-gray-400"}`} style={i.active ? { backgroundColor: tint("1a") } : undefined}>
+                    <i.icon className="h-3.5 w-3.5" /> {i.label}
                   </div>
                 ))}
               </aside>
-              <div className="min-w-0 flex-1 p-6 xl:p-7">
-                <div className="mb-4 flex items-center justify-between text-sm">
-                  <span className="text-lg font-bold">Storage Overview</span>
+              <div className="min-w-0 flex-1 p-5">
+                <div className="mb-3 flex items-center justify-between text-xs">
+                  <span className="text-sm font-bold">Storage Overview</span>
                   {haveData ? (
                     <span className="flex items-center gap-1.5 text-gray-500 dark:text-gray-400"><span className="h-2 w-2 rounded-full bg-green-500" /> Live</span>
                   ) : (
                     <span className="text-gray-400">{usage ? "No data" : "Loading…"}</span>
                   )}
                 </div>
-                <div className="grid grid-cols-1 gap-4 min-[420px]:grid-cols-2">
+                <div className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2">
                   {volumes.map((v) => (
-                    <div key={v.key} className="flex items-center gap-4 rounded-xl border border-gray-200 bg-gradient-to-br from-white to-gray-50 p-4 dark:border-gray-800 dark:from-gray-900 dark:to-gray-900/40">
-                      <Ring pct={v.pct} has={v.has} size={88} />
+                    <div key={v.key} className="flex items-center gap-3 rounded-xl border border-gray-200 bg-gradient-to-br from-white to-gray-50 p-3 dark:border-gray-800 dark:from-gray-900 dark:to-gray-900/40">
+                      <Ring pct={v.pct} has={v.has} />
                       <div className="min-w-0">
-                        <div className="text-xs font-semibold text-gray-500 dark:text-gray-400">{v.label}</div>
-                        <div className="text-2xl font-bold leading-tight 2xl:text-3xl">{v.has ? `${v.pct.toFixed(1)}%` : "—"}</div>
-                        <div className="mt-0.5 text-xs text-gray-400">{v.has ? `${fmt(v.used)} / ${fmt(v.cap)} TB` : "no data yet"}</div>
+                        <div className="text-[11px] font-semibold text-gray-500 dark:text-gray-400">{v.label}</div>
+                        <div className="text-xl font-bold leading-tight">{v.has ? `${v.pct.toFixed(1)}%` : "—"}</div>
+                        <div className="mt-0.5 text-[10px] text-gray-400">{v.has ? `${fmt(v.used)} / ${fmt(v.cap)} TB` : "no data yet"}</div>
                       </div>
                     </div>
                   ))}
                 </div>
-                <div className="mt-6">
-                  <div className="mb-3 flex items-center justify-between">
-                    <span className="text-lg font-bold">Storage Usage</span>
-                    <span className="flex items-center gap-3 text-xs text-gray-400">
+                <div className="mt-4">
+                  <div className="mb-2 flex items-center justify-between">
+                    <span className="text-sm font-bold">Storage Usage</span>
+                    <span className="flex items-center gap-3 text-[10px] text-gray-400">
                       <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-sm" style={{ backgroundColor: accent }} /> Used</span>
                       <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-sm bg-gray-200 dark:bg-gray-700" /> Free</span>
                     </span>
                   </div>
-                  <div className="space-y-4">
+                  <div className="space-y-3">
                     {volumes.map((v) => (
                       <div key={v.key}>
-                        <div className="mb-1.5 flex justify-between text-xs text-gray-500 dark:text-gray-400">
+                        <div className="mb-1 flex justify-between text-[10px] text-gray-500 dark:text-gray-400">
                           <span className="font-semibold">{v.label}</span>
                           <span>{v.has ? `${fmt(v.free)} TB free` : "—"}</span>
                         </div>
-                        <div className="flex h-4 w-full overflow-hidden rounded-md bg-gray-200 dark:bg-gray-700">
+                        <div className="flex h-3 w-full overflow-hidden rounded-md bg-gray-200 dark:bg-gray-700">
                           <div className="h-full" style={{ width: `${Math.min(v.pct, 100)}%`, backgroundColor: accent }} />
                         </div>
                       </div>
                     ))}
                   </div>
-                  <div className="mt-3 text-xs text-gray-400">{updatedStamp ? `Last updated ${updatedStamp}` : "Not updated yet"}</div>
-                </div>
-                <div className="mt-6 hidden border-t border-gray-100 pt-5 dark:border-gray-800 md:block">
-                  <div className="mb-3 flex items-center justify-between">
-                    <span className="text-lg font-bold">Recent Reports</span>
-                    <span className="text-xs text-gray-400">{reports ? `${reports.length} archived` : "Loading…"}</span>
-                  </div>
-                  {reports && reports.length > 0 ? (
-                    <div className="space-y-2">
-                      {reports.slice(0, 2).map((r) => (
-                        <div key={r.filename} className="flex items-center justify-between rounded-lg border border-gray-100 px-3 py-2 text-sm dark:border-gray-800">
-                          <span className="flex items-center gap-2.5 text-gray-700 dark:text-gray-200"><FileText className={`h-4 w-4 ${ac}`} /> Storage Audit Report</span>
-                          <span className="text-xs text-gray-400">{r.date}</span>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="rounded-lg border border-dashed border-gray-200 px-3 py-4 text-center text-sm text-gray-400 dark:border-gray-700">{reports ? "The first monthly report appears at month-end." : "Loading…"}</div>
-                  )}
+                  <div className="mt-3 text-[10px] text-gray-400">{updatedStamp ? `Last updated ${updatedStamp}` : "Not updated yet"}</div>
                 </div>
               </div>
             </div>
 
             {/* Floating status card */}
-            <div className={`${card} relative z-10 mt-4 flex w-full items-start gap-4 p-5 shadow-xl sm:w-80 lg:absolute lg:-bottom-[4.5rem] lg:-right-2 lg:mt-0`}>
-              <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${toneStyle.bg}`}>
+            <div className={`${card} relative z-10 mt-4 flex w-full items-start gap-3 p-4 shadow-xl sm:w-64 lg:absolute lg:-bottom-20 lg:-right-2 lg:mt-0`}>
+              <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${toneStyle.bg}`}>
                 {health.tone === "warn" ? <AlertTriangle className={`h-5 w-5 ${toneStyle.fg}`} /> : <Check className={`h-5 w-5 ${toneStyle.fg}`} />}
               </div>
               <div className="min-w-0">
-                <div className="text-base font-bold">{health.title}</div>
-                <div className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">{health.body}</div>
-                <button onClick={onGetStarted} className={`mt-2 inline-flex items-center gap-1 text-sm font-semibold ${ac}`}>View details <ArrowRight className="h-3 w-3" /></button>
+                <div className="text-sm font-bold">{health.title}</div>
+                <div className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">{health.body}</div>
+                <button onClick={onGetStarted} className={`mt-2 inline-flex items-center gap-1 text-xs font-semibold ${ac}`}>View details <ArrowRight className="h-3 w-3" /></button>
               </div>
             </div>
-          </div>
-        </div>
-
-        {/* Live numbers strip */}
-        <div className="relative border-t border-gray-200/70 bg-white/60 backdrop-blur dark:border-gray-800 dark:bg-gray-950/50">
-          <div className="mx-auto grid max-w-[1800px] grid-cols-2 gap-y-5 px-6 py-5 lg:grid-cols-4 lg:px-12">
-            {heroStats.map((st, i) => (
-              <div key={st.label} className={`flex items-center gap-4 ${i > 0 ? "lg:border-l lg:border-gray-200 lg:pl-8 dark:lg:border-gray-800" : ""}`}>
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl" style={{ backgroundColor: tint("1a") }}><st.icon className={`h-6 w-6 ${ac}`} /></div>
-                <div className="min-w-0">
-                  <div className={`text-2xl font-extrabold leading-tight sm:text-3xl ${hd}`}>{st.value}</div>
-                  <div className="text-sm text-gray-500 dark:text-gray-400">{st.label}</div>
-                </div>
-              </div>
-            ))}
           </div>
         </div>
       </section>
