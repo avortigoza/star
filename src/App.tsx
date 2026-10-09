@@ -293,12 +293,12 @@ function Landing({ onGetStarted, branding }: { onGetStarted: () => void; brandin
       </nav>
 
       {/* ===== Hero ===== */}
-      <section id="overview" className="relative flex min-h-[calc(100svh/var(--z)-61px)] items-center overflow-hidden" style={{ background: `radial-gradient(ellipse at 75% 20%, ${tint("1f")}, transparent 60%)` }}>
+      <section id="overview" className="relative overflow-hidden" style={{ background: `radial-gradient(ellipse at 75% 20%, ${tint("1f")}, transparent 60%)` }}>
         <div aria-hidden className="pointer-events-none absolute inset-0 opacity-60 dark:opacity-40" style={{ backgroundImage: `radial-gradient(${accent}40 1px, transparent 1px)`, backgroundSize: "26px 26px", WebkitMaskImage: "linear-gradient(to bottom, black 30%, transparent 95%)", maskImage: "linear-gradient(to bottom, black 30%, transparent 95%)" }} />
         <div aria-hidden className="star-float pointer-events-none absolute -left-24 top-24 h-80 w-80 rounded-full blur-3xl" style={{ backgroundColor: tint("22") }} />
         <div aria-hidden className="star-float pointer-events-none absolute right-1/4 -bottom-20 h-72 w-72 rounded-full blur-3xl" style={{ backgroundColor: tint("1a"), animationDelay: "-4s" }} />
         <Star aria-hidden className={`pointer-events-none absolute -right-24 -top-16 hidden h-[620px] w-[620px] rotate-12 opacity-[.07] lg:block ${ac}`} fill="currentColor" strokeLinejoin="round" />
-        <div className="relative mx-auto grid w-full max-w-[1800px] gap-12 px-6 lg:px-12 pt-16 pb-20 lg:grid-cols-[1fr_1.15fr] lg:items-center lg:pb-28">
+        <div className="relative mx-auto grid max-w-[1800px] gap-12 px-6 lg:px-12 pt-16 pb-20 lg:grid-cols-[1fr_1.15fr] lg:items-center lg:pb-28">
           <div>
             {branding.logoDataUrl && branding.logoIncludesText ? (
               <img src={branding.logoDataUrl} alt={branding.appName} className="mb-3 max-h-28 object-contain" />
