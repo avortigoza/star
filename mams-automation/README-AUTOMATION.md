@@ -110,6 +110,10 @@ VM SSHes to the Mac, reads the CSVs and imports them through the same
 - Only imports a CSV that is newer than the one it imported last time
   (remembered in `mams-automation/.pull-state.json`, gitignored). Safe to run
   hourly.
+- Never imports a CSV older than 48 hours (`PULL_MAX_CSV_AGE_HOURS` in `.env`
+  to change). Importing stamps the data with "now", so re-importing an old CSV
+  would make STAR look freshly scanned and defeat the report's stale-data
+  guard. `--force` overrides this on purpose.
 - Exit codes: `0` ok / nothing new, `1` error, `2` scan still running.
 - Options: `--dry-run` (show what it would do), `--force` (re-import even if
   unchanged).

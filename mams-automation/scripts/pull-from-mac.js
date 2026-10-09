@@ -20,7 +20,7 @@
 // Usage:
 //   node scripts/pull-from-mac.js            # import whatever is new
 //   node scripts/pull-from-mac.js --dry-run  # show what it would do
-//   node scripts/pull-from-mac.js --force    # re-import even if unchanged
+//   node scripts/pull-from-mac.js --force    # import even if unchanged or old
 //
 // Exit codes: 0 = ok (imported something, or nothing new), 1 = error,
 //             2 = scan still running on the Mac (skipped).
@@ -29,6 +29,7 @@
 //   MAC_STUDIO_HOST / MAC_STUDIO_USER   same as fetch-usage.js
 //   MAC_AUDIT_DATA_DIR                  where the scan writes its CSVs
 //   MAMS_API_URL                        default http://localhost:5179
+//   PULL_MAX_CSV_AGE_HOURS              skip CSVs older than this (default 48)
 
 require("dotenv").config({ path: require("path").join(__dirname, "..", ".env") });
 const fs = require("fs");
@@ -42,6 +43,11 @@ const SSH_HOST = process.env.MAC_STUDIO_HOST || "10.0.0.164";
 const SSH_USER = process.env.MAC_STUDIO_USER || "postmams";
 const DATA_DIR = (process.env.MAC_AUDIT_DATA_DIR || "/Users/postmams/Documents/scripts/audit_storage/data").replace(/\/+$/, "");
 const API_URL = (process.env.MAMS_API_URL || "http://localhost:5179").replace(/\/+$/, "");
+// A CSV older than this is never imported automatically. Importing stamps the
+// data with "now", so re-importing a weeks-old CSV would make STAR (and the
+// monthly report's stale-data guard) think a fresh scan had just happened.
+// Use --force to import an old CSV on purpose.
+const MAX_CSV_AGE_HOURS = Number(process.env.PULL_MAX_CSV_AGE_HOURS) || 48;
 const STATE_FILE = path.join(__dirname, "..", ".pull-state.json");
 const PUSH_SCRIPT = path.join(__dirname, "push-to-mams.js");
 
@@ -111,6 +117,11 @@ async function main() {
     const when = new Date(mtime * 1000).toISOString();
     if (!FORCE && state[side] && state[side].mtime >= mtime) {
       log(`${side}: nothing new (CSV from ${when}, already imported).`);
+      continue;
+    }
+    const ageHours = (Date.now() / 1000 - mtime) / 3600;
+    if (!FORCE && ageHours > MAX_CSV_AGE_HOURS) {
+      log(`${side}: CSV on the Mac is from ${when} (${(ageHours / 24).toFixed(1)} days old) - not importing, it would look like a fresh scan. Use --force to import it anyway.`);
       continue;
     }
     if (DRY_RUN) {
