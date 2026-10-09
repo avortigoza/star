@@ -248,7 +248,7 @@ function Landing({ onGetStarted, branding }: { onGetStarted: () => void; brandin
     <div className="min-h-screen bg-white text-gray-900 dark:bg-gray-950 dark:text-gray-100" style={{ "--ac": accent, "--acl": lighten(accent, 0.45), "--hc": accentDark } as React.CSSProperties}>
       {/* ===== Nav ===== */}
       <nav className="sticky top-0 z-20 border-b border-gray-200 bg-white/85 backdrop-blur dark:border-gray-800 dark:bg-gray-950/85">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6">
+        <div className="mx-auto flex max-w-[1800px] items-center justify-between px-6 lg:px-12">
           <div className="flex items-center gap-10">
             <a href="#overview" onClick={scrollTo("overview")} className="py-3"><Wordmark /></a>
             <div className="hidden items-center gap-7 sm:flex">
@@ -269,7 +269,7 @@ function Landing({ onGetStarted, branding }: { onGetStarted: () => void; brandin
 
       {/* ===== Hero ===== */}
       <section id="overview" className="relative overflow-hidden" style={{ background: `radial-gradient(ellipse at 75% 20%, ${tint("1f")}, transparent 60%)` }}>
-        <div className="mx-auto grid max-w-6xl gap-12 px-6 pt-16 pb-20 lg:grid-cols-[1fr_1.15fr] lg:items-center lg:pb-28">
+        <div className="mx-auto grid max-w-[1800px] gap-12 px-6 lg:px-12 pt-16 pb-20 lg:grid-cols-[1fr_1.15fr] lg:items-center lg:pb-28">
           <div>
             {branding.taglineImageDataUrl ? (
               <img src={branding.taglineImageDataUrl} alt={branding.tagline} className="mb-5 h-8 object-contain" />
@@ -283,12 +283,12 @@ function Landing({ onGetStarted, branding }: { onGetStarted: () => void; brandin
             ) : branding.appNameImageDataUrl ? (
               <img src={branding.appNameImageDataUrl} alt={branding.appName} className="mb-3 h-16 object-contain" />
             ) : (
-              <h1 className={`text-6xl font-extrabold tracking-tight sm:text-7xl ${hd}`}>{branding.appName}</h1>
+              <h1 className={`text-6xl font-extrabold tracking-tight sm:text-7xl xl:text-8xl ${hd}`}>{branding.appName}</h1>
             )}
-            <p className={`mt-2 text-3xl font-extrabold leading-tight tracking-tight sm:text-4xl ${hd}`}>
+            <p className={`mt-2 text-3xl font-extrabold leading-tight tracking-tight sm:text-4xl xl:text-5xl ${hd}`}>
               Storage Tracking &amp;<br />Audit Reporting
             </p>
-            <p className="mt-5 max-w-md text-lg text-gray-600 dark:text-gray-300">
+            <p className="mt-5 max-w-md text-lg text-gray-600 dark:text-gray-300 xl:max-w-xl xl:text-xl">
               Monitor storage capacity, usage, and audit reports across your MAMS storage infrastructure.
             </p>
             <div className="mt-8 flex flex-wrap items-center gap-3">
@@ -384,7 +384,7 @@ function Landing({ onGetStarted, branding }: { onGetStarted: () => void; brandin
 
       {/* ===== Why choose ===== */}
       <section id="features" className="scroll-mt-14 border-t border-gray-100 bg-gray-50/60 dark:border-gray-800 dark:bg-gray-900/40">
-        <div className="mx-auto max-w-6xl px-6 py-16">
+        <div className="mx-auto max-w-[1800px] px-6 lg:px-12 py-16">
           <h2 className={`text-center text-3xl font-extrabold tracking-tight ${hd}`}>Why Choose {branding.appName}?</h2>
           <p className="mt-2 text-center text-gray-500 dark:text-gray-400">Everything you need to keep storage under control.</p>
           <div className="mt-10 grid gap-8 sm:grid-cols-2 lg:grid-cols-5">
@@ -402,7 +402,7 @@ function Landing({ onGetStarted, branding }: { onGetStarted: () => void; brandin
       </section>
 
       {/* ===== Key features ===== */}
-      <section className="mx-auto grid max-w-6xl gap-10 px-6 py-16 lg:grid-cols-[0.8fr_2.2fr]">
+      <section className="mx-auto grid max-w-[1800px] gap-10 px-6 lg:px-12 py-16 lg:grid-cols-[0.8fr_2.2fr]">
         <div>
           <span className={`inline-block rounded-full px-3 py-1 text-xs font-semibold ${ac}`} style={{ backgroundColor: tint("1a") }}>Key Features</span>
           <h2 className={`mt-4 text-3xl font-extrabold leading-tight tracking-tight ${hd}`}>Everything You Need in One Place</h2>
@@ -487,7 +487,7 @@ function Landing({ onGetStarted, branding }: { onGetStarted: () => void; brandin
 
       {/* ===== Stats band ===== */}
       <section className="border-y border-gray-100 bg-gray-50/60 py-12 dark:border-gray-800 dark:bg-gray-900/40">
-        <div className="mx-auto max-w-4xl px-6 text-center">
+        <div className="mx-auto max-w-5xl px-6 text-center">
           <h2 className={`text-xl font-extrabold ${hd}`}>Built for MAMS Operations</h2>
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Runs quietly in the background, so the numbers are there when you need them.</p>
           <div className="mt-8 grid grid-cols-2 gap-y-6 sm:grid-cols-4 sm:divide-x sm:divide-gray-200 dark:sm:divide-gray-800">
@@ -504,7 +504,7 @@ function Landing({ onGetStarted, branding }: { onGetStarted: () => void; brandin
       {/* ===== CTA banner ===== */}
       <section className="relative overflow-hidden text-white" style={{ background: `linear-gradient(to right, ${accentDark}, ${accent})` }}>
         <div aria-hidden className="absolute inset-y-0 right-0 w-1/3 bg-white/10" style={{ clipPath: "polygon(35% 0, 100% 0, 100% 100%, 0 100%)" }} />
-        <div className="relative mx-auto flex max-w-6xl flex-col items-center gap-5 px-6 py-8 text-center sm:flex-row sm:justify-between sm:text-left">
+        <div className="relative mx-auto flex max-w-[1800px] flex-col items-center gap-5 px-6 lg:px-12 py-8 text-center sm:flex-row sm:justify-between sm:text-left">
           <div className="flex items-center gap-4">
             <Star size={36} fill="currentColor" strokeLinejoin="round" className="shrink-0" />
             <div>
@@ -520,7 +520,7 @@ function Landing({ onGetStarted, branding }: { onGetStarted: () => void; brandin
 
       {/* ===== Footer ===== */}
       <footer className="bg-white py-6 dark:bg-gray-950">
-        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-6 text-xs text-gray-400 sm:flex-row">
+        <div className="mx-auto flex max-w-[1800px] flex-col items-center justify-between gap-3 px-6 lg:px-12 text-xs text-gray-400 sm:flex-row">
           <div className="flex items-center gap-2 font-semibold text-gray-600 dark:text-gray-300">
             <NavLogo size={16} /> {branding.appName}{branding.tagline ? ` — ${branding.tagline}` : ""}
           </div>
