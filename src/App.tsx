@@ -344,9 +344,6 @@ function Landing({ onGetStarted, branding }: { onGetStarted: () => void; brandin
         <Star aria-hidden className={`pointer-events-none absolute -right-24 -top-16 hidden h-[620px] w-[620px] rotate-12 opacity-[.07] lg:block ${ac}`} fill="currentColor" strokeLinejoin="round" />
         <div className="relative mx-auto grid w-full max-w-[1800px] flex-1 content-center gap-12 px-6 pt-12 pb-16 lg:grid-cols-[1fr_1.15fr] lg:items-center lg:px-12 lg:pb-24">
           <div>
-            {branding.taglineImageDataUrl && (
-              <TrimmedImg src={branding.taglineImageDataUrl} alt="" className="mb-5 h-8 object-contain object-left" />
-            )}
             {branding.logoDataUrl && branding.logoIncludesText ? (
               <TrimmedImg src={branding.logoDataUrl} alt={branding.appName} className="mb-3 max-h-28 object-contain object-left" />
             ) : branding.appNameImageDataUrl ? (
