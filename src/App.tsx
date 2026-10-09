@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Download, Moon, Sun, Laptop, Trash2, Upload, LogOut, Sparkles, Settings, Eye, EyeOff, Star, MoreVertical, Check, Database, Mail, BarChart3, ArrowRight, Folder, FileText, Cpu, Cloud, Shield, Palette, Contrast, ChevronRight, X } from "lucide-react";
+import { Download, Moon, Sun, Laptop, Trash2, Upload, LogOut, Sparkles, Settings, Eye, EyeOff, Star, MoreVertical, Check, Database, BarChart3, ArrowRight, Folder, FileText, Cloud, Shield, X, Zap, Code2, CheckCircle2, LayoutDashboard, AlertTriangle } from "lucide-react";
 import Papa from "papaparse";
 import * as XLSX from "xlsx";
 
@@ -128,254 +128,401 @@ function Login({ onLogin, branding, asModal, onClose }: { onLogin: (username: st
 // =============================
 // Shown first when hitting the app's root URL, before the login form -
 // onGetStarted just flips a piece of local state in the parent (no
-// router in this app), swapping this out for <Login/>. Fetches from the
-// public, no-auth /api/v1 endpoints so the hero and report list show
-// genuinely live data rather than placeholder numbers.
-function Landing({ onGetStarted, branding }: { onGetStarted: () => void; branding: { appName: string; accentColor: string; tagline: string; logoDataUrl: string | null; logoIncludesText: boolean; appNameImageDataUrl: string | null; taglineImageDataUrl: string | null } }) {
+// router in this app) that opens the Login modal on top of this page.
+// Fetches from the public, no-auth /api/v1 endpoints so the hero mockup,
+// stats and report list show genuinely live data rather than placeholder
+// numbers. There is no usage history stored anywhere, so nothing here
+// draws a trend line - the mockup shows used vs. free capacity instead.
+type LandingBranding = { appName: string; accentColor: string; tagline: string; logoDataUrl: string | null; logoIncludesText: boolean; appNameImageDataUrl: string | null; taglineImageDataUrl: string | null };
+
+function Landing({ onGetStarted, branding }: { onGetStarted: () => void; branding: LandingBranding }) {
   const [usage, setUsage] = useState<{ ibm?: any; comp?: any } | null>(null);
-  const [recentReports, setRecentReports] = useState<any[] | null>(null);
+  const [reports, setReports] = useState<any[] | null>(null);
 
   useEffect(() => {
     fetch("/api/v1/usage").then((r) => (r.ok ? r.json() : null)).then(setUsage).catch(() => setUsage(null));
-    fetch("/api/v1/reports").then((r) => (r.ok ? r.json() : [])).then((list) => setRecentReports(Array.isArray(list) ? list.slice(0, 4) : [])).catch(() => setRecentReports([]));
+    fetch("/api/v1/reports").then((r) => (r.ok ? r.json() : [])).then((list) => setReports(Array.isArray(list) ? list : [])).catch(() => setReports([]));
   }, []);
 
   const accent = branding.accentColor;
   const accentDark = darkenHex(accent, 0.35);
+  const lighten = (hex: string, amt: number) => {
+    const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
+    if (!m) return hex;
+    const n = parseInt(m[1], 16);
+    const mix = (c: number) => Math.round(c + (255 - c) * amt).toString(16).padStart(2, "0");
+    return `#${mix((n >> 16) & 255)}${mix((n >> 8) & 255)}${mix(n & 255)}`;
+  };
+  // Accent text / headings need a lighter tone on the dark background.
+  const ac = "text-[color:var(--ac)] dark:text-[color:var(--acl)]";
+  const hd = "text-[color:var(--hc)] dark:text-white";
+  const tint = (a: string) => `${accent}${a}`;
   const scrollTo = (id: string) => (e: React.MouseEvent) => { e.preventDefault(); document.getElementById(id)?.scrollIntoView({ behavior: "smooth" }); };
+  const fmt = (n: number) => Math.round(n).toLocaleString();
 
-  const glanceFeatures = [
-    { icon: BarChart3, title: "Live Storage Usage", description: "Track capacity and utilization across your storage volumes with daily refreshed data." },
-    { icon: Folder, title: "Folder-Level Visibility", description: "Drill down from total capacity to individual folders and top storage paths." },
-    { icon: FileText, title: "Automated Reporting", description: "Generate monthly Excel reports automatically and keep every report in one place." },
-    { icon: Cpu, title: "AI-Powered Summary", description: "Turn storage numbers into a concise, plain-English summary automatically." },
+  // Volumes shown in the mockup. Internal key "comp" is the FS5K volume.
+  const volumes = [
+    { key: "ibm", label: "IBM" },
+    { key: "comp", label: "FS5K" },
+  ].map(({ key, label }) => {
+    const v = (usage as any)?.[key];
+    const has = !!v && Number.isFinite(Number(v.percentFull)) && (Number(v.usedTB) > 0 || !!v.updatedAt);
+    const used = has ? Number(v.usedTB) || 0 : 0;
+    const cap = has ? Number(v.capacityTB) || 0 : 0;
+    return { key, label, has, pct: has ? Number(v.percentFull) : 0, used, cap, free: Math.max(cap - used, 0), updatedAt: has ? v.updatedAt : null };
+  });
+  const haveData = volumes.some((v) => v.has && v.used > 0);
+  const totalCap = volumes.reduce((s, v) => s + v.cap, 0);
+
+  // Honest status for the floating card: derived from the live numbers,
+  // never a hardcoded "all good".
+  const STALE_HOURS = 48;
+  const ages = volumes.map((v) => (v.updatedAt ? (Date.now() - Date.parse(v.updatedAt)) / 36e5 : NaN)).filter((n) => Number.isFinite(n));
+  const stale = haveData && (ages.length < volumes.filter((v) => v.has).length || ages.some((a) => a > STALE_HOURS));
+  const hot = volumes.filter((v) => v.has && v.pct >= 90);
+  type Health = { tone: "ok" | "warn" | "idle"; title: string; body: string };
+  const health: Health = !haveData
+    ? { tone: "idle", title: "Waiting for data", body: "Usage appears after the first import." }
+    : hot.length
+      ? { tone: "warn", title: "Capacity Warning", body: `${hot.map((v) => `${v.label} is ${v.pct.toFixed(1)}%`).join(" and ")} full.` }
+      : stale
+        ? { tone: "warn", title: "Data Not Refreshed", body: "Usage numbers haven't been updated in over 2 days." }
+        : { tone: "ok", title: "System Healthy", body: "Both volumes are within capacity and data is current." };
+  const toneStyle = {
+    ok: { bg: "bg-green-100 dark:bg-green-900/40", fg: "text-green-600 dark:text-green-400" },
+    warn: { bg: "bg-amber-100 dark:bg-amber-900/40", fg: "text-amber-600 dark:text-amber-400" },
+    idle: { bg: "bg-gray-100 dark:bg-gray-800", fg: "text-gray-500 dark:text-gray-400" },
+  }[health.tone];
+
+  const updatedStamp = (() => {
+    const ts = volumes.map((v) => Date.parse(v.updatedAt || "")).filter((n) => Number.isFinite(n));
+    if (!ts.length) return null;
+    return new Date(Math.max(...ts)).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+  })();
+
+  const whyItems = [
+    { icon: Zap, title: "Daily Usage Refresh", description: "Capacity numbers are pulled in automatically every morning." },
+    { icon: Folder, title: "Folder-Level Visibility", description: "Drill down from total capacity to the folders using the most space." },
+    { icon: Shield, title: "Role-Based Access", description: "Imports and data management stay admin-only." },
+    { icon: BarChart3, title: "AI-Powered Summary", description: "Storage numbers turned into a short plain-English summary." },
+    { icon: Cloud, title: "Open Read-Only API", description: "Share usage and reports with other internal tools." },
   ];
 
-  const flowSteps = [
-    { icon: Database, label: "Scan", sub: "Scan storage volumes" },
-    { icon: Cloud, label: "Ingest", sub: "Push data into STAR" },
-    { icon: Cpu, label: "Analyze", sub: "Analyze & process" },
-    { icon: Sparkles, label: "AI Summary", sub: "Generate AI summary" },
-    { icon: FileText, label: "Excel Report", sub: "Create Excel report" },
-    { icon: Mail, label: "Email", sub: "Send via email" },
+  const stats = [
+    { value: "Daily", label: "Usage refresh" },
+    { value: "Month-end", label: "Automated report & email" },
+    { value: reports === null ? "—" : String(reports.length), label: "Reports archived" },
+    { value: totalCap ? `${fmt(totalCap)} TB` : "—", label: "Capacity tracked" },
   ];
 
-  const trustBadges = [
-    { icon: Shield, title: "Role-based access", description: "Separate everyday users from administrative functions." },
-    { icon: Upload, title: "Controlled imports", description: "CSV imports and data-management actions are admin-only." },
-    { icon: Palette, title: "Configurable branding", description: "Customize STAR's name, tagline, logo, and accent color." },
-    { icon: Contrast, title: "Light & dark mode", description: "Use STAR comfortably in any environment." },
-  ];
+  const checks = ["Live capacity", "Monthly reports", "Role-based access"];
 
-  const NavLogo = () => (
+  const NavLogo = ({ size = 28 }: { size?: number }) => (
     branding.logoDataUrl && !branding.logoIncludesText ? (
-      <img src={branding.logoDataUrl} alt={branding.appName} className="h-9 object-contain" />
+      <img src={branding.logoDataUrl} alt={branding.appName} style={{ height: size + 6 }} className="object-contain" />
     ) : (
-      <Star size={30} style={{ color: accent }} fill="currentColor" strokeLinejoin="round" />
+      <Star size={size} className={ac} fill="currentColor" strokeLinejoin="round" />
+    )
+  );
+  // Nav / footer lockup: icon + name. A logo that already contains its own
+  // text, or a designed name image, stands in for the text name.
+  const Wordmark = ({ size = 28, text = "text-xl" }: { size?: number; text?: string }) => (
+    branding.logoDataUrl && branding.logoIncludesText ? (
+      <img src={branding.logoDataUrl} alt={branding.appName} style={{ height: size + 8 }} className="object-contain" />
+    ) : (
+      <span className="flex items-center gap-2">
+        <NavLogo size={size} />
+        {branding.appNameImageDataUrl ? (
+          <img src={branding.appNameImageDataUrl} alt={branding.appName} style={{ height: size - 6 }} className="object-contain" />
+        ) : (
+          <span className={`${text} font-extrabold tracking-wide ${hd}`}>{branding.appName}</span>
+        )}
+      </span>
     )
   );
 
+  const navLink = "relative py-5 text-sm font-medium text-gray-600 transition hover:text-gray-900 dark:text-gray-400 dark:hover:text-white";
+  const card = "rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900";
+
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-100">
+    <div className="min-h-screen bg-white text-gray-900 dark:bg-gray-950 dark:text-gray-100" style={{ "--ac": accent, "--acl": lighten(accent, 0.45), "--hc": accentDark } as React.CSSProperties}>
       {/* ===== Nav ===== */}
-      <nav className="sticky top-0 z-20 border-b border-gray-200 bg-white/80 backdrop-blur dark:border-gray-800 dark:bg-gray-950/80">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3">
-          <div className="flex items-center gap-8">
-            <div className="flex items-center gap-2 font-bold tracking-wide">
-              <NavLogo />
-            </div>
-            <div className="hidden items-center gap-6 text-sm font-medium text-gray-500 dark:text-gray-400 sm:flex">
-              <a href="#overview" onClick={scrollTo("overview")} className="hover:text-gray-900 dark:hover:text-white">Overview</a>
-              <a href="#features" onClick={scrollTo("features")} className="hover:text-gray-900 dark:hover:text-white">Features</a>
-              <a href="#reports" onClick={scrollTo("reports")} className="hover:text-gray-900 dark:hover:text-white">Reports</a>
-              <a href="#api" onClick={scrollTo("api")} className="hover:text-gray-900 dark:hover:text-white">API</a>
+      <nav className="sticky top-0 z-20 border-b border-gray-200 bg-white/85 backdrop-blur dark:border-gray-800 dark:bg-gray-950/85">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-6">
+          <div className="flex items-center gap-10">
+            <a href="#overview" onClick={scrollTo("overview")} className="py-3"><Wordmark /></a>
+            <div className="hidden items-center gap-7 sm:flex">
+              <a href="#overview" onClick={scrollTo("overview")} className={`${navLink} !text-gray-900 dark:!text-white`}>
+                Overview
+                <span className="absolute inset-x-0 bottom-0 h-0.5 rounded-full" style={{ backgroundColor: accent }} />
+              </a>
+              <a href="#features" onClick={scrollTo("features")} className={navLink}>Features</a>
+              <a href="#reports" onClick={scrollTo("reports")} className={navLink}>Reports</a>
+              <a href="#api" onClick={scrollTo("api")} className={navLink}>API</a>
             </div>
           </div>
-          <button onClick={onGetStarted} className="rounded-full px-4 py-2 text-sm font-semibold text-white shadow-sm transition active:scale-[.98]" style={{ backgroundColor: accent }}>
+          <button onClick={onGetStarted} className="rounded-full px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:brightness-110 active:scale-[.98]" style={{ backgroundColor: accent }}>
             Sign In
           </button>
         </div>
       </nav>
 
       {/* ===== Hero ===== */}
-      <section id="overview" className="mx-auto grid max-w-6xl gap-10 px-6 pt-16 pb-6 lg:grid-cols-2 lg:items-center">
-        <div>
-          {branding.taglineImageDataUrl ? (
-            <img src={branding.taglineImageDataUrl} alt={branding.tagline} className="mb-3 h-8 object-contain" />
-          ) : (
-            branding.tagline && <p className="mb-3 text-base font-semibold uppercase tracking-wide" style={{ color: accent }}>{branding.tagline}</p>
-          )}
-          {branding.logoDataUrl && branding.logoIncludesText ? (
-            <img src={branding.logoDataUrl} alt={branding.appName} className="mb-4 max-h-28 object-contain" />
-          ) : branding.appNameImageDataUrl ? (
-            <img src={branding.appNameImageDataUrl} alt={branding.appName} className="mb-4 h-16 object-contain" />
-          ) : (
-            <h1 className="mb-4 text-5xl font-extrabold tracking-tight">{branding.appName}</h1>
-          )}
-          <p className="max-w-md text-lg text-gray-600 dark:text-gray-300">
-            Monitor storage capacity, usage, and audit reports across your MAMS storage infrastructure.
-          </p>
-        </div>
-
-        {/* Live storage overview card */}
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-lg dark:border-gray-800 dark:bg-gray-900">
-          <div className="mb-4 flex items-center justify-between text-sm">
-            <span className="font-semibold text-gray-900 dark:text-white">Storage Overview</span>
-            {usage ? (
-              <span className="flex items-center gap-1.5 text-gray-400"><span className="h-2 w-2 rounded-full bg-green-500" /> Live</span>
+      <section id="overview" className="relative overflow-hidden" style={{ background: `radial-gradient(ellipse at 75% 20%, ${tint("1f")}, transparent 60%)` }}>
+        <div className="mx-auto grid max-w-6xl gap-12 px-6 pt-16 pb-20 lg:grid-cols-[1fr_1.15fr] lg:items-center lg:pb-28">
+          <div>
+            {branding.taglineImageDataUrl ? (
+              <img src={branding.taglineImageDataUrl} alt={branding.tagline} className="mb-5 h-8 object-contain" />
             ) : (
-              <span className="text-gray-400">Loading…</span>
+              branding.tagline && (
+                <span className={`mb-5 inline-block rounded-full px-3 py-1 text-xs font-semibold ${ac}`} style={{ backgroundColor: tint("1a") }}>{branding.tagline}</span>
+              )
             )}
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            {[{ key: "ibm", label: "IBM FS5K" }, { key: "comp", label: "COMP" }].map(({ key, label }) => {
-              const v = usage?.[key];
-              return (
-                <div key={key} className="rounded-xl border border-gray-200 p-4 dark:border-gray-800">
-                  <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-400">{label}</div>
-                  <div className="text-2xl font-bold" style={{ color: accent }}>{v ? `${v.percentFull?.toFixed(1)}%` : "—"}</div>
-                  <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
-                    <div className="h-full rounded-full" style={{ width: `${v?.percentFull || 0}%`, backgroundColor: accent }} />
-                  </div>
-                  <div className="mt-2 text-xs text-gray-400">{v ? `${Math.round(v.usedTB)} TB / ${v.capacityTB} TB` : "no data yet"}</div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* ===== Feature grid ===== */}
-      <section id="features" className="mx-auto max-w-6xl px-6 pt-6 pb-16">
-        <h2 className="text-3xl font-bold">Your storage at a glance</h2>
-        <p className="mt-1 text-gray-500 dark:text-gray-400">Everything you need, in one place.</p>
-        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {glanceFeatures.map((f) => (
-            <div key={f.title} className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
-              <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl" style={{ backgroundColor: `${accent}1a` }}>
-                <f.icon className="h-5 w-5" style={{ color: accent }} />
-              </div>
-              <h3 className="font-semibold text-gray-900 dark:text-white">{f.title}</h3>
-              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{f.description}</p>
+            {branding.logoDataUrl && branding.logoIncludesText ? (
+              <img src={branding.logoDataUrl} alt={branding.appName} className="mb-3 max-h-28 object-contain" />
+            ) : branding.appNameImageDataUrl ? (
+              <img src={branding.appNameImageDataUrl} alt={branding.appName} className="mb-3 h-16 object-contain" />
+            ) : (
+              <h1 className={`text-6xl font-extrabold tracking-tight sm:text-7xl ${hd}`}>{branding.appName}</h1>
+            )}
+            <p className={`mt-2 text-3xl font-extrabold leading-tight tracking-tight sm:text-4xl ${hd}`}>
+              Storage Tracking &amp;<br />Audit Reporting
+            </p>
+            <p className="mt-5 max-w-md text-lg text-gray-600 dark:text-gray-300">
+              Monitor storage capacity, usage, and audit reports across your MAMS storage infrastructure.
+            </p>
+            <div className="mt-8 flex flex-wrap items-center gap-3">
+              <button onClick={onGetStarted} className="inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold text-white shadow-md transition hover:brightness-110 active:scale-[.98]" style={{ backgroundColor: accent }}>
+                Sign In <ArrowRight className="h-4 w-4" />
+              </button>
+              <a href="/api/v1/docs" className="inline-flex items-center gap-2 rounded-full border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800">
+                <Code2 className={`h-4 w-4 ${ac}`} /> API Docs
+              </a>
             </div>
-          ))}
+            <ul className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-sm font-medium text-gray-600 dark:text-gray-400">
+              {checks.map((c) => (
+                <li key={c} className="flex items-center gap-2">
+                  <CheckCircle2 className={`h-4 w-4 ${ac}`} /> {c}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Dashboard mockup (live data) */}
+          <div className="relative lg:pr-10">
+            <div aria-hidden className="absolute -right-6 top-6 hidden h-72 w-72 rounded-full blur-3xl sm:block" style={{ backgroundColor: tint("30") }} />
+            <div className={`${card} relative flex overflow-hidden shadow-xl`}>
+              <aside className="hidden w-36 shrink-0 border-r border-gray-100 p-4 dark:border-gray-800 sm:block">
+                <div className="mb-5"><Wordmark size={18} text="text-sm" /></div>
+                {[{ icon: LayoutDashboard, label: "Dashboard", active: true }, { icon: Folder, label: "Folders" }, { icon: FileText, label: "Reports" }, { icon: Settings, label: "Settings" }].map((i) => (
+                  <div key={i.label} className={`mb-1 flex items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-medium ${i.active ? ac : "text-gray-500 dark:text-gray-400"}`} style={i.active ? { backgroundColor: tint("1a") } : undefined}>
+                    <i.icon className="h-3.5 w-3.5" /> {i.label}
+                  </div>
+                ))}
+              </aside>
+              <div className="min-w-0 flex-1 p-5">
+                <div className="mb-3 flex items-center justify-between text-xs">
+                  <span className="text-sm font-bold">Storage Overview</span>
+                  {haveData ? (
+                    <span className="flex items-center gap-1.5 text-gray-500 dark:text-gray-400"><span className="h-2 w-2 rounded-full bg-green-500" /> Live</span>
+                  ) : (
+                    <span className="text-gray-400">{usage ? "No data" : "Loading…"}</span>
+                  )}
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  {volumes.map((v) => (
+                    <div key={v.key} className="rounded-xl border border-gray-200 p-3 dark:border-gray-800">
+                      <div className="text-[11px] font-semibold text-gray-500 dark:text-gray-400">{v.label}</div>
+                      <div className="mt-1 text-2xl font-bold">{v.has ? `${v.pct.toFixed(1)}%` : "—"}</div>
+                      <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
+                        <div className="h-full rounded-full" style={{ width: `${Math.min(v.pct, 100)}%`, backgroundColor: accent }} />
+                      </div>
+                      <div className="mt-1.5 text-[10px] text-gray-400">{v.has ? `${fmt(v.used)} TB / ${fmt(v.cap)} TB` : "no data yet"}</div>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-4">
+                  <div className="mb-2 flex items-center justify-between">
+                    <span className="text-sm font-bold">Storage Usage</span>
+                    <span className="flex items-center gap-3 text-[10px] text-gray-400">
+                      <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-sm" style={{ backgroundColor: accent }} /> Used</span>
+                      <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-sm bg-gray-200 dark:bg-gray-700" /> Free</span>
+                    </span>
+                  </div>
+                  <div className="space-y-3">
+                    {volumes.map((v) => (
+                      <div key={v.key}>
+                        <div className="mb-1 flex justify-between text-[10px] text-gray-500 dark:text-gray-400">
+                          <span className="font-semibold">{v.label}</span>
+                          <span>{v.has ? `${fmt(v.free)} TB free` : "—"}</span>
+                        </div>
+                        <div className="flex h-3 w-full overflow-hidden rounded-md bg-gray-200 dark:bg-gray-700">
+                          <div className="h-full" style={{ width: `${Math.min(v.pct, 100)}%`, backgroundColor: accent }} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-3 text-[10px] text-gray-400">{updatedStamp ? `Last updated ${updatedStamp}` : "Not updated yet"}</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Floating status card */}
+            <div className={`${card} relative z-10 mt-4 flex w-full items-start gap-3 p-4 shadow-xl sm:w-64 lg:absolute lg:-bottom-20 lg:-right-2 lg:mt-0`}>
+              <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${toneStyle.bg}`}>
+                {health.tone === "warn" ? <AlertTriangle className={`h-5 w-5 ${toneStyle.fg}`} /> : <Check className={`h-5 w-5 ${toneStyle.fg}`} />}
+              </div>
+              <div className="min-w-0">
+                <div className="text-sm font-bold">{health.title}</div>
+                <div className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">{health.body}</div>
+                <button onClick={onGetStarted} className={`mt-2 inline-flex items-center gap-1 text-xs font-semibold ${ac}`}>View details <ArrowRight className="h-3 w-3" /></button>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* ===== Automation flow ===== */}
-      <section className="border-y border-gray-200 bg-white py-16 dark:border-gray-800 dark:bg-gray-900">
-        <div className="mx-auto max-w-6xl px-6">
-          <p className="text-sm font-semibold uppercase tracking-wide" style={{ color: accent }}>Automation</p>
-          <h2 className="mt-2 max-w-xl text-3xl font-bold">From storage scan to report — automatically.</h2>
-          <p className="mt-2 max-w-xl text-gray-500 dark:text-gray-400">
-            STAR turns raw storage scans into actionable storage reports without requiring someone to manually process the data every month.
-          </p>
-          <div className="mt-10 flex flex-wrap items-start justify-center gap-2">
-            {flowSteps.map((s, i) => (
-              <div key={s.label} className="flex items-center gap-2">
-                <div className="flex w-28 flex-col items-center text-center">
-                  <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-xl" style={{ backgroundColor: `${accent}1a` }}>
-                    <s.icon className="h-6 w-6" style={{ color: accent }} />
-                  </div>
-                  <div className="text-sm font-semibold">{s.label}</div>
-                  <div className="text-xs text-gray-400">{s.sub}</div>
+      {/* ===== Why choose ===== */}
+      <section id="features" className="scroll-mt-14 border-t border-gray-100 bg-gray-50/60 dark:border-gray-800 dark:bg-gray-900/40">
+        <div className="mx-auto max-w-6xl px-6 py-16">
+          <h2 className={`text-center text-3xl font-extrabold tracking-tight ${hd}`}>Why Choose {branding.appName}?</h2>
+          <p className="mt-2 text-center text-gray-500 dark:text-gray-400">Everything you need to keep storage under control.</p>
+          <div className="mt-10 grid gap-8 sm:grid-cols-2 lg:grid-cols-5">
+            {whyItems.map((w) => (
+              <div key={w.title} className="text-center">
+                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full" style={{ backgroundColor: tint("1a") }}>
+                  <w.icon className={`h-6 w-6 ${ac}`} />
                 </div>
-                {i < flowSteps.length - 1 && <ChevronRight className="h-5 w-5 shrink-0 text-gray-300 dark:text-gray-700" />}
+                <h3 className="text-sm font-bold">{w.title}</h3>
+                <p className="mx-auto mt-1 max-w-[12rem] text-xs text-gray-500 dark:text-gray-400">{w.description}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ===== Three-column: automation / reports / API ===== */}
-      <section id="reports" className="mx-auto max-w-6xl px-6 py-16">
-        <div className="grid gap-6 lg:grid-cols-3">
-          <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">
-            <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: accent }}>Automation</p>
-            <h3 className="mt-2 text-xl font-bold">Built to run quietly in the background.</h3>
-            <div className="mt-6 flex flex-col items-center gap-2">
-              <div className="w-full rounded-lg border border-gray-200 px-3 py-2 text-center text-sm dark:border-gray-800">Daily Usage Refresh</div>
-              <div className="h-4 w-px bg-gray-300 dark:bg-gray-700" />
-              <div className="w-full rounded-lg px-3 py-2 text-center text-sm font-semibold text-white" style={{ backgroundColor: accent }}>{branding.appName}</div>
-              <div className="h-4 w-px bg-gray-300 dark:bg-gray-700" />
-              <div className="w-full rounded-lg border border-gray-200 px-3 py-2 text-center text-sm dark:border-gray-800">Month-End</div>
-              <div className="flex w-full gap-2 text-xs text-gray-400">
-                <div className="flex-1 rounded-lg border border-gray-200 p-2 text-center dark:border-gray-800">Storage Scan</div>
-                <div className="flex-1 rounded-lg border border-gray-200 p-2 text-center dark:border-gray-800">Excel Report</div>
-                <div className="flex-1 rounded-lg border border-gray-200 p-2 text-center dark:border-gray-800">Email</div>
-              </div>
+      {/* ===== Key features ===== */}
+      <section className="mx-auto grid max-w-6xl gap-10 px-6 py-16 lg:grid-cols-[0.8fr_2.2fr]">
+        <div>
+          <span className={`inline-block rounded-full px-3 py-1 text-xs font-semibold ${ac}`} style={{ backgroundColor: tint("1a") }}>Key Features</span>
+          <h2 className={`mt-4 text-3xl font-extrabold leading-tight tracking-tight ${hd}`}>Everything You Need in One Place</h2>
+          <p className="mt-4 text-gray-600 dark:text-gray-300">
+            From the daily capacity check to the month-end report in your inbox, {branding.appName} handles the routine so nobody has to consolidate storage data by hand.
+          </p>
+        </div>
+
+        <div className="grid gap-5 md:grid-cols-3">
+          {/* Storage monitoring */}
+          <div className={`${card} flex flex-col p-5`}>
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg" style={{ backgroundColor: tint("1a") }}><Database className={`h-4 w-4 ${ac}`} /></div>
+              <h3 className="font-bold">Storage Monitoring</h3>
             </div>
-            <p className="mt-4 text-xs text-gray-400">No manual consolidation. No monthly scramble.</p>
+            <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">Capacity and utilization for each volume, with folder-level detail behind it.</p>
+            <div className="mt-4 space-y-3 border-t border-gray-100 pt-4 dark:border-gray-800">
+              {volumes.map((v) => (
+                <div key={v.key}>
+                  <div className="mb-1 flex justify-between text-xs">
+                    <span className="font-semibold">{v.label}</span>
+                    <span className="text-gray-500 dark:text-gray-400">{v.has ? `${v.pct.toFixed(1)}%` : "—"}</span>
+                  </div>
+                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
+                    <div className="h-full rounded-full" style={{ width: `${Math.min(v.pct, 100)}%`, backgroundColor: accent }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+            <button onClick={onGetStarted} className={`mt-auto inline-flex items-center gap-1 pt-4 text-sm font-semibold ${ac}`}>Open dashboard <ArrowRight className="h-3.5 w-3.5" /></button>
           </div>
 
-          <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">
-            <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: accent }}>Report History</p>
-            <h3 className="mt-2 text-xl font-bold">Every report. One place.</h3>
-            <div className="mt-4 space-y-2">
-              {recentReports === null ? (
+          {/* Automated reporting */}
+          <div id="reports" className={`${card} flex scroll-mt-20 flex-col p-5`}>
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg" style={{ backgroundColor: tint("1a") }}><FileText className={`h-4 w-4 ${ac}`} /></div>
+              <h3 className="font-bold">Automated Reporting</h3>
+            </div>
+            <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">A monthly Excel report with an AI summary, emailed automatically and archived here.</p>
+            <div className="mt-4 space-y-2 border-t border-gray-100 pt-4 dark:border-gray-800">
+              {reports === null ? (
                 <p className="text-sm text-gray-400">Loading…</p>
-              ) : recentReports.length === 0 ? (
+              ) : reports.length === 0 ? (
                 <p className="text-sm text-gray-400">No reports generated yet.</p>
               ) : (
-                recentReports.map((r) => (
-                  <div key={r.filename} className="flex items-center justify-between rounded-lg border border-gray-200 px-3 py-2 text-sm dark:border-gray-800">
-                    <span className="text-gray-600 dark:text-gray-300">{r.date}</span>
-                    <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${r.source === "manual" ? "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300" : "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"}`}>
+                reports.slice(0, 4).map((r) => (
+                  <div key={r.filename} className="flex items-center justify-between text-xs">
+                    <span className="flex items-center gap-1.5 text-gray-600 dark:text-gray-300"><Check className={`h-3.5 w-3.5 ${ac}`} /> {r.date}</span>
+                    <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${r.source === "manual" ? "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300" : "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300"}`}>
                       {r.source === "manual" ? "Manual" : "Automated"}
                     </span>
                   </div>
                 ))
               )}
             </div>
+            <button onClick={onGetStarted} className={`mt-auto inline-flex items-center gap-1 pt-4 text-sm font-semibold ${ac}`}>View all reports <ArrowRight className="h-3.5 w-3.5" /></button>
           </div>
 
-          <div id="api" className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">
-            <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: accent }}>Public API</p>
-            <h3 className="mt-2 text-xl font-bold">Storage data other tools can use.</h3>
-            <pre className="mt-4 overflow-x-auto rounded-lg bg-gray-900 p-3 text-xs text-green-300">
+          {/* Public API */}
+          <div id="api" className={`${card} flex scroll-mt-20 flex-col p-5`}>
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg" style={{ backgroundColor: tint("1a") }}><Code2 className={`h-4 w-4 ${ac}`} /></div>
+              <h3 className="font-bold">Public API</h3>
+            </div>
+            <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">Read-only endpoints so other internal tools can use the same numbers.</p>
+            <pre className="mt-4 overflow-x-auto rounded-lg bg-gray-900 p-3 text-[11px] leading-relaxed text-green-300">
 {`GET /api/v1/usage
 
 {
-  "ibm": { "usedTB": ${usage?.ibm ? Math.round(usage.ibm.usedTB) : 572}, "percent": ${usage?.ibm?.percentFull?.toFixed(1) || "86.5"} },
-  "comp": { "usedTB": ${usage?.comp ? Math.round(usage.comp.usedTB) : 417}, "percent": ${usage?.comp?.percentFull?.toFixed(1) || "94.8"} }
+  "ibm": {
+    "percentFull": ${volumes[0].has ? volumes[0].pct.toFixed(1) : "…"}
+  },
+  "comp": {
+    "percentFull": ${volumes[1].has ? volumes[1].pct.toFixed(1) : "…"}
+  }
 }`}
             </pre>
-            <p className="mt-3 text-xs text-gray-400">A read-only API makes {branding.appName}'s storage information available to other internal tools and workflows.</p>
-            <a href="/api/v1/docs" className="mt-2 inline-flex items-center gap-1 text-sm font-semibold" style={{ color: accent }}>Explore API Docs <ArrowRight className="h-3.5 w-3.5" /></a>
+            <a href="/api/v1/docs" className={`mt-auto inline-flex items-center gap-1 pt-4 text-sm font-semibold ${ac}`}>Explore API docs <ArrowRight className="h-3.5 w-3.5" /></a>
           </div>
         </div>
       </section>
 
-      {/* ===== Trust badges ===== */}
-      <section className="border-t border-gray-200 bg-white py-10 dark:border-gray-800 dark:bg-gray-900">
-        <div className="mx-auto grid max-w-6xl gap-6 px-6 sm:grid-cols-2 lg:grid-cols-4">
-          {trustBadges.map((b) => (
-            <div key={b.title} className="flex items-start gap-3">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800">
-                <b.icon className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+      {/* ===== Stats band ===== */}
+      <section className="border-y border-gray-100 bg-gray-50/60 py-12 dark:border-gray-800 dark:bg-gray-900/40">
+        <div className="mx-auto max-w-4xl px-6 text-center">
+          <h2 className={`text-xl font-extrabold ${hd}`}>Built for MAMS Operations</h2>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Runs quietly in the background, so the numbers are there when you need them.</p>
+          <div className="mt-8 grid grid-cols-2 gap-y-6 sm:grid-cols-4 sm:divide-x sm:divide-gray-200 dark:sm:divide-gray-800">
+            {stats.map((s) => (
+              <div key={s.label} className="px-4">
+                <div className={`text-2xl font-extrabold ${ac}`}>{s.value}</div>
+                <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">{s.label}</div>
               </div>
-              <div>
-                <div className="text-sm font-semibold">{b.title}</div>
-                <div className="text-xs text-gray-400">{b.description}</div>
-              </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </section>
 
       {/* ===== CTA banner ===== */}
-      <section className="px-6 py-16 text-center text-white" style={{ background: `linear-gradient(to right, ${accent}, ${accentDark})` }}>
-        <p className="text-xl font-semibold sm:text-2xl">Know your storage. Understand your usage.<br className="hidden sm:block" /> Report it automatically.</p>
-        <button onClick={onGetStarted} className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-white px-6 py-3 font-semibold text-gray-900 shadow-sm transition active:scale-[.98]">
-          Open {branding.appName} <ArrowRight className="h-4 w-4" />
-        </button>
+      <section className="relative overflow-hidden text-white" style={{ background: `linear-gradient(to right, ${accentDark}, ${accent})` }}>
+        <div aria-hidden className="absolute inset-y-0 right-0 w-1/3 bg-white/10" style={{ clipPath: "polygon(35% 0, 100% 0, 100% 100%, 0 100%)" }} />
+        <div className="relative mx-auto flex max-w-6xl flex-col items-center gap-5 px-6 py-8 text-center sm:flex-row sm:justify-between sm:text-left">
+          <div className="flex items-center gap-4">
+            <Star size={36} fill="currentColor" strokeLinejoin="round" className="shrink-0" />
+            <div>
+              <div className="text-lg font-bold">Ready to open {branding.appName}?</div>
+              <div className="text-sm text-white/80">Know your storage. Understand your usage. Report it automatically.</div>
+            </div>
+          </div>
+          <button onClick={onGetStarted} className="inline-flex shrink-0 items-center gap-2 rounded-full bg-white px-6 py-2.5 text-sm font-semibold text-gray-900 shadow-sm transition hover:bg-gray-100 active:scale-[.98]">
+            Sign In <ArrowRight className="h-4 w-4" />
+          </button>
+        </div>
       </section>
 
       {/* ===== Footer ===== */}
-      <footer className="border-t border-gray-200 bg-gray-50 py-8 dark:border-gray-800 dark:bg-gray-950">
-        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-6 text-sm text-gray-400 sm:flex-row">
+      <footer className="bg-white py-6 dark:bg-gray-950">
+        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-6 text-xs text-gray-400 sm:flex-row">
           <div className="flex items-center gap-2 font-semibold text-gray-600 dark:text-gray-300">
-            <NavLogo /> {branding.appName}{branding.tagline ? ` — ${branding.tagline}` : ""}
+            <NavLogo size={16} /> {branding.appName}{branding.tagline ? ` — ${branding.tagline}` : ""}
           </div>
           <div>Internal MAMS infrastructure &middot; Storage &middot; Reporting &middot; Automation &middot; API</div>
         </div>
