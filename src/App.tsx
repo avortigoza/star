@@ -215,6 +215,14 @@ function Landing({ onGetStarted, branding }: { onGetStarted: () => void; brandin
     { value: totalCap ? `${fmt(totalCap)} TB` : "—", label: "Capacity tracked" },
   ];
 
+  const totalUsed = volumes.reduce((s, v) => s + v.used, 0);
+  const heroStats = [
+    { icon: Database, value: totalCap ? `${fmt(totalCap)} TB` : "—", label: "Total capacity tracked" },
+    { icon: BarChart3, value: haveData ? `${fmt(totalUsed)} TB` : "—", label: haveData && totalCap ? `In use · ${((totalUsed / totalCap) * 100).toFixed(1)}% of capacity` : "In use" },
+    { icon: Cloud, value: haveData ? `${fmt(Math.max(totalCap - totalUsed, 0))} TB` : "—", label: "Free across both volumes" },
+    { icon: Zap, value: "Daily", label: "Automatic usage refresh" },
+  ];
+
   const checks = ["Live capacity", "Monthly reports", "Role-based access"];
 
   const NavLogo = ({ size = 28 }: { size?: number }) => (
@@ -293,12 +301,12 @@ function Landing({ onGetStarted, branding }: { onGetStarted: () => void; brandin
       </nav>
 
       {/* ===== Hero ===== */}
-      <section id="overview" className="relative overflow-hidden" style={{ background: `radial-gradient(ellipse at 75% 20%, ${tint("1f")}, transparent 60%)` }}>
+      <section id="overview" className="relative flex min-h-[calc(100svh/var(--z)-61px)] flex-col overflow-hidden" style={{ background: `radial-gradient(ellipse at 75% 20%, ${tint("1f")}, transparent 60%)` }}>
         <div aria-hidden className="pointer-events-none absolute inset-0 opacity-60 dark:opacity-40" style={{ backgroundImage: `radial-gradient(${accent}40 1px, transparent 1px)`, backgroundSize: "26px 26px", WebkitMaskImage: "linear-gradient(to bottom, black 30%, transparent 95%)", maskImage: "linear-gradient(to bottom, black 30%, transparent 95%)" }} />
         <div aria-hidden className="star-float pointer-events-none absolute -left-24 top-24 h-80 w-80 rounded-full blur-3xl" style={{ backgroundColor: tint("22") }} />
         <div aria-hidden className="star-float pointer-events-none absolute right-1/4 -bottom-20 h-72 w-72 rounded-full blur-3xl" style={{ backgroundColor: tint("1a"), animationDelay: "-4s" }} />
         <Star aria-hidden className={`pointer-events-none absolute -right-24 -top-16 hidden h-[620px] w-[620px] rotate-12 opacity-[.07] lg:block ${ac}`} fill="currentColor" strokeLinejoin="round" />
-        <div className="relative mx-auto grid max-w-[1800px] gap-12 px-6 lg:px-12 pt-16 pb-20 lg:grid-cols-[1fr_1.15fr] lg:items-center lg:pb-28">
+        <div className="relative mx-auto grid w-full max-w-[1800px] flex-1 content-center gap-12 px-6 pt-12 pb-16 lg:grid-cols-[1fr_1.15fr] lg:items-center lg:px-12 lg:pb-24">
           <div>
             {branding.logoDataUrl && branding.logoIncludesText ? (
               <img src={branding.logoDataUrl} alt={branding.appName} className="mb-3 max-h-28 object-contain" />
@@ -404,6 +412,21 @@ function Landing({ onGetStarted, branding }: { onGetStarted: () => void; brandin
                 <button onClick={onGetStarted} className={`mt-2 inline-flex items-center gap-1 text-xs font-semibold ${ac}`}>View details <ArrowRight className="h-3 w-3" /></button>
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* Live numbers strip - fills the bottom of the first screen */}
+        <div className="relative border-t border-gray-200/70 bg-white/60 backdrop-blur dark:border-gray-800 dark:bg-gray-950/50">
+          <div className="mx-auto grid max-w-[1800px] grid-cols-2 gap-y-5 px-6 py-5 lg:grid-cols-4 lg:px-12">
+            {heroStats.map((st, i) => (
+              <div key={st.label} className={`flex items-center gap-3 ${i > 0 ? "lg:border-l lg:border-gray-200 lg:pl-8 dark:lg:border-gray-800" : ""}`}>
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl" style={{ backgroundColor: tint("1a") }}><st.icon className={`h-5 w-5 ${ac}`} /></div>
+                <div className="min-w-0">
+                  <div className={`text-xl font-extrabold leading-tight sm:text-2xl ${hd}`}>{st.value}</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400 sm:text-sm">{st.label}</div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </section>
@@ -1280,8 +1303,23 @@ export default function App() {
   // logoIncludesText), since the tab title is otherwise the only place
   // a custom name would show at all.
   useEffect(() => {
-    document.title = branding.appName || "STAR";
-  }, [branding.appName]);
+    const name = branding.appName || "STAR";
+    document.title = branding.tagline ? `${name} - ${branding.tagline}` : name;
+  }, [branding.appName, branding.tagline]);
+
+  // Tab icon: the uploaded logo when it's icon-only, otherwise the bundled
+  // star icon. (?v= busts the browsers' aggressive favicon cache.)
+  useEffect(() => {
+    const href = branding.logoDataUrl && !branding.logoIncludesText ? branding.logoDataUrl : "/favicon.png?v=2";
+    let link = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
+    if (!link) {
+      link = document.createElement("link");
+      link.rel = "icon";
+      document.head.appendChild(link);
+    }
+    link.type = "image/png";
+    link.href = href;
+  }, [branding.logoDataUrl, branding.logoIncludesText]);
 
   // Closes the header's "more actions" dropdown on an outside click.
   useEffect(() => {
