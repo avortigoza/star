@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Download, Moon, Sun, Laptop, Trash2, Upload, LogOut, Sparkles, Settings, Eye, EyeOff, Star, MoreVertical, Check, Database, BarChart3, ArrowRight, Folder, FileText, Cloud, Shield, X, Zap, Code2, CheckCircle2, LayoutDashboard, AlertTriangle } from "lucide-react";
+import { Download, Moon, Sun, Laptop, Trash2, Upload, LogOut, Sparkles, Settings, Eye, EyeOff, Star, MoreVertical, Check, Database, BarChart3, ArrowRight, Folder, FileText, Cloud, Shield, X, Zap, Code2, CheckCircle2, LayoutDashboard, AlertTriangle, Cpu, Mail } from "lucide-react";
 import Papa from "papaparse";
 import * as XLSX from "xlsx";
 
@@ -244,8 +244,36 @@ function Landing({ onGetStarted, branding }: { onGetStarted: () => void; brandin
   const navLink = "relative py-5 text-sm font-medium text-gray-600 transition hover:text-gray-900 dark:text-gray-400 dark:hover:text-white";
   const card = "rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900";
 
+  // Ring gauge used in the hero mockup.
+  const Ring = ({ pct, has, size = 76 }: { pct: number; has: boolean; size?: number }) => {
+    const r = size / 2 - 7;
+    const c = 2 * Math.PI * r;
+    return (
+      <div className="relative shrink-0" style={{ width: size, height: size }}>
+        <svg width={size} height={size} className="-rotate-90">
+          <circle cx={size / 2} cy={size / 2} r={r} fill="none" strokeWidth="7" className="stroke-gray-200 dark:stroke-gray-700" />
+          <circle cx={size / 2} cy={size / 2} r={r} fill="none" strokeWidth="7" strokeLinecap="round" stroke={pct >= 90 ? "#f59e0b" : accent} strokeDasharray={c} strokeDashoffset={c * (1 - (has ? Math.min(pct, 100) : 0) / 100)} style={{ transition: "stroke-dashoffset 1s ease" }} />
+        </svg>
+        <div className="absolute inset-0 flex items-center justify-center text-sm font-bold">{has ? `${Math.round(pct)}%` : "—"}</div>
+      </div>
+    );
+  };
+
+  const howSteps = [
+    { icon: Database, label: "Scan", sub: "Scan storage volumes" },
+    { icon: Cloud, label: "Ingest", sub: "Push data into STAR" },
+    { icon: Cpu, label: "Analyze", sub: "Analyze & process" },
+    { icon: Sparkles, label: "AI Summary", sub: "Generate AI summary" },
+    { icon: FileText, label: "Excel Report", sub: "Create Excel report" },
+    { icon: Mail, label: "Email", sub: "Send to your team" },
+  ];
+
+  const gradText = "bg-gradient-to-r from-[color:var(--hc)] to-[color:var(--ac)] bg-clip-text text-transparent dark:from-white dark:to-[color:var(--acl)]";
+  const lift = "transition duration-300 hover:-translate-y-1 hover:shadow-xl";
+
   return (
     <div className="min-h-screen bg-white text-gray-900 dark:bg-gray-950 dark:text-gray-100" style={{ "--ac": accent, "--acl": lighten(accent, 0.45), "--hc": accentDark } as React.CSSProperties}>
+      <style>{`@keyframes star-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-14px)}}@keyframes star-rise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}.star-float{animation:star-float 9s ease-in-out infinite}.star-rise{animation:star-rise .7s ease-out both}`}</style>
       {/* ===== Nav ===== */}
       <nav className="sticky top-0 z-20 border-b border-gray-200 bg-white/85 backdrop-blur dark:border-gray-800 dark:bg-gray-950/85">
         <div className="mx-auto flex max-w-[1800px] items-center justify-between px-6 lg:px-12">
@@ -269,7 +297,11 @@ function Landing({ onGetStarted, branding }: { onGetStarted: () => void; brandin
 
       {/* ===== Hero ===== */}
       <section id="overview" className="relative overflow-hidden" style={{ background: `radial-gradient(ellipse at 75% 20%, ${tint("1f")}, transparent 60%)` }}>
-        <div className="mx-auto grid max-w-[1800px] gap-12 px-6 lg:px-12 pt-16 pb-20 lg:grid-cols-[1fr_1.15fr] lg:items-center lg:pb-28">
+        <div aria-hidden className="pointer-events-none absolute inset-0 opacity-60 dark:opacity-40" style={{ backgroundImage: `radial-gradient(${accent}40 1px, transparent 1px)`, backgroundSize: "26px 26px", WebkitMaskImage: "linear-gradient(to bottom, black 30%, transparent 95%)", maskImage: "linear-gradient(to bottom, black 30%, transparent 95%)" }} />
+        <div aria-hidden className="star-float pointer-events-none absolute -left-24 top-24 h-80 w-80 rounded-full blur-3xl" style={{ backgroundColor: tint("22") }} />
+        <div aria-hidden className="star-float pointer-events-none absolute right-1/4 -bottom-20 h-72 w-72 rounded-full blur-3xl" style={{ backgroundColor: tint("1a"), animationDelay: "-4s" }} />
+        <Star aria-hidden className={`pointer-events-none absolute -right-24 -top-16 hidden h-[620px] w-[620px] rotate-12 opacity-[.07] lg:block ${ac}`} fill="currentColor" strokeLinejoin="round" />
+        <div className="relative mx-auto grid max-w-[1800px] gap-12 px-6 lg:px-12 pt-16 pb-20 lg:grid-cols-[1fr_1.15fr] lg:items-center lg:pb-28">
           <div>
             {branding.taglineImageDataUrl ? (
               <img src={branding.taglineImageDataUrl} alt={branding.tagline} className="mb-5 h-8 object-contain" />
@@ -283,7 +315,7 @@ function Landing({ onGetStarted, branding }: { onGetStarted: () => void; brandin
             ) : branding.appNameImageDataUrl ? (
               <img src={branding.appNameImageDataUrl} alt={branding.appName} className="mb-3 h-16 object-contain" />
             ) : (
-              <h1 className={`text-6xl font-extrabold tracking-tight sm:text-7xl xl:text-8xl ${hd}`}>{branding.appName}</h1>
+              <h1 className={`text-6xl font-extrabold tracking-tight sm:text-7xl xl:text-8xl star-rise ${gradText}`}>{branding.appName}</h1>
             )}
             <p className={`mt-2 text-3xl font-extrabold leading-tight tracking-tight sm:text-4xl xl:text-5xl ${hd}`}>
               Storage Tracking &amp;<br />Audit Reporting
@@ -296,7 +328,7 @@ function Landing({ onGetStarted, branding }: { onGetStarted: () => void; brandin
                 Sign In <ArrowRight className="h-4 w-4" />
               </button>
               <a href="/api/v1/docs" className="inline-flex items-center gap-2 rounded-full border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800">
-                <Code2 className={`h-4 w-4 ${ac}`} /> API Docs
+                <Code2 className="h-5 w-5" /> API Docs
               </a>
             </div>
             <ul className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-sm font-medium text-gray-600 dark:text-gray-400">
@@ -329,15 +361,15 @@ function Landing({ onGetStarted, branding }: { onGetStarted: () => void; brandin
                     <span className="text-gray-400">{usage ? "No data" : "Loading…"}</span>
                   )}
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2">
                   {volumes.map((v) => (
-                    <div key={v.key} className="rounded-xl border border-gray-200 p-3 dark:border-gray-800">
-                      <div className="text-[11px] font-semibold text-gray-500 dark:text-gray-400">{v.label}</div>
-                      <div className="mt-1 text-2xl font-bold">{v.has ? `${v.pct.toFixed(1)}%` : "—"}</div>
-                      <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
-                        <div className="h-full rounded-full" style={{ width: `${Math.min(v.pct, 100)}%`, backgroundColor: accent }} />
+                    <div key={v.key} className="flex items-center gap-3 rounded-xl border border-gray-200 bg-gradient-to-br from-white to-gray-50 p-3 dark:border-gray-800 dark:from-gray-900 dark:to-gray-900/40">
+                      <Ring pct={v.pct} has={v.has} />
+                      <div className="min-w-0">
+                        <div className="text-[11px] font-semibold text-gray-500 dark:text-gray-400">{v.label}</div>
+                        <div className="text-xl font-bold leading-tight">{v.has ? `${v.pct.toFixed(1)}%` : "—"}</div>
+                        <div className="mt-0.5 text-[10px] text-gray-400">{v.has ? `${fmt(v.used)} / ${fmt(v.cap)} TB` : "no data yet"}</div>
                       </div>
-                      <div className="mt-1.5 text-[10px] text-gray-400">{v.has ? `${fmt(v.used)} TB / ${fmt(v.cap)} TB` : "no data yet"}</div>
                     </div>
                   ))}
                 </div>
@@ -383,18 +415,21 @@ function Landing({ onGetStarted, branding }: { onGetStarted: () => void; brandin
       </section>
 
       {/* ===== Why choose ===== */}
-      <section id="features" className="scroll-mt-14 border-t border-gray-100 bg-gray-50/60 dark:border-gray-800 dark:bg-gray-900/40">
-        <div className="mx-auto max-w-[1800px] px-6 lg:px-12 py-16">
-          <h2 className={`text-center text-3xl font-extrabold tracking-tight ${hd}`}>Why Choose {branding.appName}?</h2>
-          <p className="mt-2 text-center text-gray-500 dark:text-gray-400">Everything you need to keep storage under control.</p>
-          <div className="mt-10 grid gap-8 sm:grid-cols-2 lg:grid-cols-5">
-            {whyItems.map((w) => (
-              <div key={w.title} className="text-center">
-                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full" style={{ backgroundColor: tint("1a") }}>
-                  <w.icon className={`h-6 w-6 ${ac}`} />
+      <section id="features" className="relative scroll-mt-14 overflow-hidden border-t border-gray-100 bg-gradient-to-b from-gray-50 to-white dark:border-gray-800 dark:from-gray-900/60 dark:to-gray-950">
+        <div aria-hidden className="pointer-events-none absolute left-1/2 top-0 h-64 w-[60rem] -translate-x-1/2 rounded-full blur-3xl" style={{ backgroundColor: tint("12") }} />
+        <div className="relative mx-auto max-w-[1800px] px-6 py-20 lg:px-12">
+          <h2 className={`text-center text-4xl font-extrabold tracking-tight ${gradText}`}>Why Choose {branding.appName}?</h2>
+          <p className="mt-3 text-center text-gray-500 dark:text-gray-400">Everything you need to keep storage under control.</p>
+          <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-5">
+            {whyItems.map((w, i) => (
+              <div key={w.title} className={`group relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-6 text-center shadow-sm dark:border-gray-800 dark:bg-gray-900 ${lift}`}>
+                <div aria-hidden className="absolute inset-x-0 top-0 h-1 opacity-0 transition group-hover:opacity-100" style={{ background: `linear-gradient(to right, ${accent}, ${accentDark})` }} />
+                <div className="absolute right-4 top-3 text-xs font-bold text-gray-200 dark:text-gray-800">{String(i + 1).padStart(2, "0")}</div>
+                <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl text-white shadow-lg transition group-hover:scale-110" style={{ background: `linear-gradient(135deg, ${accent}, ${accentDark})`, boxShadow: `0 10px 24px -8px ${accent}80` }}>
+                  <w.icon className="h-6 w-6" />
                 </div>
-                <h3 className="text-sm font-bold">{w.title}</h3>
-                <p className="mx-auto mt-1 max-w-[12rem] text-xs text-gray-500 dark:text-gray-400">{w.description}</p>
+                <h3 className="text-base font-bold">{w.title}</h3>
+                <p className="mx-auto mt-2 max-w-[14rem] text-sm text-gray-500 dark:text-gray-400">{w.description}</p>
               </div>
             ))}
           </div>
@@ -413,9 +448,9 @@ function Landing({ onGetStarted, branding }: { onGetStarted: () => void; brandin
 
         <div className="grid gap-5 md:grid-cols-3">
           {/* Storage monitoring */}
-          <div className={`${card} flex flex-col p-5`}>
+          <div className={`${card} flex flex-col p-6 ${lift}`}>
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg" style={{ backgroundColor: tint("1a") }}><Database className={`h-4 w-4 ${ac}`} /></div>
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl text-white" style={{ background: `linear-gradient(135deg, ${accent}, ${accentDark})` }}><Database className="h-5 w-5" /></div>
               <h3 className="font-bold">Storage Monitoring</h3>
             </div>
             <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">Capacity and utilization for each volume, with folder-level detail behind it.</p>
@@ -436,9 +471,9 @@ function Landing({ onGetStarted, branding }: { onGetStarted: () => void; brandin
           </div>
 
           {/* Automated reporting */}
-          <div id="reports" className={`${card} flex scroll-mt-20 flex-col p-5`}>
+          <div id="reports" className={`${card} flex scroll-mt-20 flex-col p-6 ${lift}`}>
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg" style={{ backgroundColor: tint("1a") }}><FileText className={`h-4 w-4 ${ac}`} /></div>
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl text-white" style={{ background: `linear-gradient(135deg, ${accent}, ${accentDark})` }}><FileText className="h-5 w-5" /></div>
               <h3 className="font-bold">Automated Reporting</h3>
             </div>
             <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">A monthly Excel report with an AI summary, emailed automatically and archived here.</p>
@@ -462,9 +497,9 @@ function Landing({ onGetStarted, branding }: { onGetStarted: () => void; brandin
           </div>
 
           {/* Public API */}
-          <div id="api" className={`${card} flex scroll-mt-20 flex-col p-5`}>
+          <div id="api" className={`${card} flex scroll-mt-20 flex-col p-6 ${lift}`}>
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg" style={{ backgroundColor: tint("1a") }}><Code2 className={`h-4 w-4 ${ac}`} /></div>
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl text-white" style={{ background: `linear-gradient(135deg, ${accent}, ${accentDark})` }}><Code2 className="h-5 w-5" /></div>
               <h3 className="font-bold">Public API</h3>
             </div>
             <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">Read-only endpoints so other internal tools can use the same numbers.</p>
@@ -485,16 +520,44 @@ function Landing({ onGetStarted, branding }: { onGetStarted: () => void; brandin
         </div>
       </section>
 
+      {/* ===== How it works ===== */}
+      <section className="relative overflow-hidden text-white" style={{ background: `linear-gradient(135deg, ${darkenHex(accent, 0.55)}, #0b1220 70%)` }}>
+        <div aria-hidden className="pointer-events-none absolute inset-0 opacity-30" style={{ backgroundImage: "radial-gradient(rgba(255,255,255,.35) 1px, transparent 1px)", backgroundSize: "28px 28px", WebkitMaskImage: "linear-gradient(to bottom, transparent, black 40%, transparent)", maskImage: "linear-gradient(to bottom, transparent, black 40%, transparent)" }} />
+        <div className="relative mx-auto max-w-[1800px] px-6 py-20 lg:px-12">
+          <div className="mx-auto max-w-2xl text-center">
+            <span className="inline-block rounded-full bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-white/80 ring-1 ring-white/20">Automation</span>
+            <h2 className="mt-4 text-4xl font-extrabold tracking-tight">From storage scan to report — automatically.</h2>
+            <p className="mt-3 text-white/70">{branding.appName} turns raw storage scans into finished reports without anyone processing the data by hand each month.</p>
+          </div>
+          <div className="relative mt-14 grid grid-cols-2 gap-y-10 md:grid-cols-3 lg:grid-cols-6">
+            <div aria-hidden className="absolute left-[8%] right-[8%] top-8 hidden border-t border-dashed border-white/25 lg:block" />
+            {howSteps.map((st, i) => (
+              <div key={st.label} className="relative flex flex-col items-center px-2 text-center">
+                <div className="relative z-10 flex h-16 w-16 items-center justify-center rounded-2xl bg-white/10 shadow-lg ring-1 ring-white/25 backdrop-blur transition hover:-translate-y-1 hover:bg-white/20">
+                  <st.icon className="h-7 w-7" />
+                  <span className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-bold text-white" style={{ background: `linear-gradient(135deg, ${accent}, ${accentDark})`, boxShadow: "0 0 0 2px rgba(11,18,32,.9)" }}>{i + 1}</span>
+                </div>
+                <div className="mt-4 text-sm font-bold">{st.label}</div>
+                <div className="mt-1 text-xs text-white/60">{st.sub}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ===== Stats band ===== */}
-      <section className="border-y border-gray-100 bg-gray-50/60 py-12 dark:border-gray-800 dark:bg-gray-900/40">
-        <div className="mx-auto max-w-5xl px-6 text-center">
-          <h2 className={`text-xl font-extrabold ${hd}`}>Built for MAMS Operations</h2>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Runs quietly in the background, so the numbers are there when you need them.</p>
-          <div className="mt-8 grid grid-cols-2 gap-y-6 sm:grid-cols-4 sm:divide-x sm:divide-gray-200 dark:sm:divide-gray-800">
+      <section className="relative bg-white py-16 dark:bg-gray-950">
+        <div className="mx-auto max-w-6xl px-6">
+          <div className="text-center">
+            <h2 className={`text-2xl font-extrabold ${gradText}`}>Built for MAMS Operations</h2>
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Runs quietly in the background, so the numbers are there when you need them.</p>
+          </div>
+          <div className="mt-10 grid grid-cols-2 gap-4 lg:grid-cols-4">
             {stats.map((s) => (
-              <div key={s.label} className="px-4">
-                <div className={`text-2xl font-extrabold ${ac}`}>{s.value}</div>
-                <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">{s.label}</div>
+              <div key={s.label} className={`relative overflow-hidden rounded-2xl border border-gray-200 bg-gradient-to-br from-white to-gray-50 p-6 text-center shadow-sm dark:border-gray-800 dark:from-gray-900 dark:to-gray-900/40 ${lift}`}>
+                <div aria-hidden className="absolute -right-6 -top-6 h-20 w-20 rounded-full blur-2xl" style={{ backgroundColor: tint("30") }} />
+                <div className={`relative text-2xl font-extrabold sm:text-3xl ${gradText}`}>{s.value}</div>
+                <div className="relative mt-2 text-xs font-medium text-gray-500 dark:text-gray-400">{s.label}</div>
               </div>
             ))}
           </div>

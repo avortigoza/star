@@ -15,7 +15,7 @@
         const isDark = savedTheme === 'dark' || (savedTheme !== 'light' && prefersDark);
         if (isDark) {
           document.documentElement.classList.add('dark');
-          document.body.classList.add('dark');
+          if (document.body) document.body.classList.add('dark');
         }
       })();
     </script>
