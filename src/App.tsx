@@ -482,7 +482,7 @@ function Landing({ onGetStarted, branding }: { onGetStarted: () => void; brandin
                 <div key={t} className="flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-300"><Check className={`h-3.5 w-3.5 ${ac}`} /> {t}</div>
               ))}
             </div>
-            <button onClick={onGetStarted} className={`mt-auto inline-flex items-center gap-1 pt-4 text-sm font-semibold ${ac}`}>Sign in to view reports <ArrowRight className="h-3.5 w-3.5" /></button>
+            <button onClick={onGetStarted} className={`mt-auto inline-flex items-center gap-1 pt-4 text-sm font-semibold ${ac}`}>View all reports <ArrowRight className="h-3.5 w-3.5" /></button>
           </div>
 
           {/* Safeguards */}
@@ -504,7 +504,6 @@ function Landing({ onGetStarted, branding }: { onGetStarted: () => void; brandin
                 </div>
               ))}
             </div>
-            <button onClick={onGetStarted} className={`mt-auto inline-flex items-center gap-1 pt-4 text-sm font-semibold ${ac}`}>Sign in to open {branding.appName} <ArrowRight className="h-3.5 w-3.5" /></button>
           </div>
         </div>
       </section>
