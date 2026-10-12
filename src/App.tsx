@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Download, Moon, Sun, Laptop, Trash2, Upload, LogOut, Sparkles, Settings, Eye, EyeOff, Star, MoreVertical, Check, Database, BarChart3, ArrowRight, Folder, FileText, Cloud, Shield, X, Zap, CheckCircle2, LayoutDashboard, AlertTriangle, Cpu, Mail } from "lucide-react";
+import { Download, Moon, Sun, Laptop, Trash2, Upload, LogOut, Sparkles, Settings, Eye, EyeOff, Star, MoreVertical, Check, Database, BarChart3, ArrowRight, Folder, FileText, Cloud, Shield, X, Zap, CheckCircle2, LayoutDashboard, AlertTriangle, Cpu, Mail, Palette } from "lucide-react";
 import Papa from "papaparse";
 import * as XLSX from "xlsx";
 
@@ -197,6 +197,7 @@ function Landing({ onGetStarted, branding }: { onGetStarted: () => void; brandin
     { icon: Folder, title: "Folder-Level Visibility", description: "Drill down from total capacity to the folders using the most space." },
     { icon: Shield, title: "Role-Based Access", description: "Imports and data management stay admin-only." },
     { icon: BarChart3, title: "AI-Powered Summary", description: "Storage numbers turned into a short plain-English summary." },
+    { icon: Palette, title: "Custom Branding", description: "Your own app name, logo and colors, set by an admin." },
   ];
 
   const stats = [
@@ -284,6 +285,7 @@ function Landing({ onGetStarted, branding }: { onGetStarted: () => void; brandin
               </a>
               <a href="#features" onClick={scrollTo("features")} className={navLink}>Features</a>
               <a href="#reports" onClick={scrollTo("reports")} className={navLink}>Reports</a>
+              <a href="#automation" onClick={scrollTo("automation")} className={navLink}>Automation</a>
             </div>
           </div>
         </div>
@@ -314,6 +316,9 @@ function Landing({ onGetStarted, branding }: { onGetStarted: () => void; brandin
               <button onClick={onGetStarted} className="inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold text-white shadow-md transition hover:brightness-110 active:scale-[.98]" style={{ backgroundColor: accent }}>
                 Sign In <ArrowRight className="h-4 w-4" />
               </button>
+              <a href="#automation" onClick={scrollTo("automation")} className="inline-flex items-center gap-2 rounded-full border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800">
+                <Cpu className="h-5 w-5" /> How it works
+              </a>
             </div>
             <ul className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-sm font-medium text-gray-600 dark:text-gray-400">
               {checks.map((c) => (
@@ -415,7 +420,7 @@ function Landing({ onGetStarted, branding }: { onGetStarted: () => void; brandin
         <div className="relative mx-auto max-w-[1800px] px-6 py-20 lg:px-12">
           <h2 className={`text-center text-4xl font-extrabold tracking-tight ${gradText}`}>Why Choose {branding.appName}?</h2>
           <p className="mt-3 text-center text-gray-500 dark:text-gray-400">Everything you need to keep storage under control.</p>
-          <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-5">
             {whyItems.map((w, i) => (
               <div key={w.title} className={`group relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-6 text-center shadow-sm dark:border-gray-800 dark:bg-gray-900 ${lift}`}>
                 <div aria-hidden className="absolute inset-x-0 top-0 h-1 opacity-0 transition group-hover:opacity-100" style={{ background: `linear-gradient(to right, ${accent}, ${accentDark})` }} />
@@ -441,7 +446,7 @@ function Landing({ onGetStarted, branding }: { onGetStarted: () => void; brandin
           </p>
         </div>
 
-        <div className="grid gap-5 md:grid-cols-2">
+        <div className="grid gap-5 md:grid-cols-3">
           {/* Storage monitoring */}
           <div className={`${card} flex flex-col p-6 ${lift}`}>
             <div className="flex items-center gap-3">
@@ -479,11 +484,35 @@ function Landing({ onGetStarted, branding }: { onGetStarted: () => void; brandin
             </div>
             <button onClick={onGetStarted} className={`mt-auto inline-flex items-center gap-1 pt-4 text-sm font-semibold ${ac}`}>Sign in to view reports <ArrowRight className="h-3.5 w-3.5" /></button>
           </div>
+
+          {/* Custom branding */}
+          <div className={`${card} flex flex-col p-6 ${lift}`}>
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl text-white" style={{ background: `linear-gradient(135deg, ${accent}, ${accentDark})` }}><Palette className="h-5 w-5" /></div>
+              <h3 className="font-bold">Custom Branding</h3>
+            </div>
+            <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">Make it yours: an admin sets the app name, tagline, logo and accent color, and the whole app follows.</p>
+            <div className="mt-4 space-y-3 border-t border-gray-100 pt-4 dark:border-gray-800">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-gray-500 dark:text-gray-400">App name</span>
+                <span className={`font-semibold ${hd}`}>{branding.appName}</span>
+              </div>
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-gray-500 dark:text-gray-400">Accent color</span>
+                <span className="flex items-center gap-2 font-mono text-gray-600 dark:text-gray-300"><span className="h-4 w-4 rounded-full ring-1 ring-black/10" style={{ backgroundColor: accent }} />{accent.toUpperCase()}</span>
+              </div>
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-gray-500 dark:text-gray-400">Logo &amp; tagline</span>
+                <span className="text-gray-600 dark:text-gray-300">Upload your own</span>
+              </div>
+            </div>
+            <button onClick={onGetStarted} className={`mt-auto inline-flex items-center gap-1 pt-4 text-sm font-semibold ${ac}`}>Sign in to customize <ArrowRight className="h-3.5 w-3.5" /></button>
+          </div>
         </div>
       </section>
 
       {/* ===== How it works ===== */}
-      <section className="relative overflow-hidden text-white" style={{ background: `linear-gradient(135deg, ${darkenHex(accent, 0.55)}, #0b1220 70%)` }}>
+      <section id="automation" className="relative scroll-mt-14 overflow-hidden text-white" style={{ background: `linear-gradient(135deg, ${darkenHex(accent, 0.55)}, #0b1220 70%)` }}>
         <div aria-hidden className="pointer-events-none absolute inset-0 opacity-30" style={{ backgroundImage: "radial-gradient(rgba(255,255,255,.35) 1px, transparent 1px)", backgroundSize: "28px 28px", WebkitMaskImage: "linear-gradient(to bottom, transparent, black 40%, transparent)", maskImage: "linear-gradient(to bottom, transparent, black 40%, transparent)" }} />
         <div className="relative mx-auto max-w-[1800px] px-6 py-20 lg:px-12">
           <div className="mx-auto max-w-2xl text-center">
@@ -549,7 +578,7 @@ function Landing({ onGetStarted, branding }: { onGetStarted: () => void; brandin
           <div className="flex items-center gap-2 font-semibold text-gray-600 dark:text-gray-300">
             <NavLogo size={16} /> {branding.appName}{branding.tagline ? ` — ${branding.tagline}` : ""}
           </div>
-          <div>Internal MAMS infrastructure &middot; Storage &middot; Reporting &middot; Automation</div>
+          <div>Internal MAMS infrastructure &middot; Storage &middot; Reporting &middot; Automation &middot; Branding</div>
         </div>
       </footer>
     </div>
