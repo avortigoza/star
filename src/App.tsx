@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Download, Moon, Sun, Laptop, Trash2, Upload, LogOut, Sparkles, Settings, Eye, EyeOff, Star, MoreVertical, Check, Database, BarChart3, ArrowRight, Folder, FileText, Cloud, Shield, X, Zap, CheckCircle2, LayoutDashboard, AlertTriangle, Cpu, Mail, Palette } from "lucide-react";
+import { Download, Moon, Sun, Laptop, Trash2, Upload, LogOut, Sparkles, Settings, Eye, EyeOff, Star, MoreVertical, Check, Database, BarChart3, ArrowRight, Folder, FileText, Cloud, Shield, X, Zap, CheckCircle2, LayoutDashboard, AlertTriangle, Cpu, Mail } from "lucide-react";
 import Papa from "papaparse";
 import * as XLSX from "xlsx";
 
@@ -485,28 +485,25 @@ function Landing({ onGetStarted, branding }: { onGetStarted: () => void; brandin
             <button onClick={onGetStarted} className={`mt-auto inline-flex items-center gap-1 pt-4 text-sm font-semibold ${ac}`}>Sign in to view reports <ArrowRight className="h-3.5 w-3.5" /></button>
           </div>
 
-          {/* Custom branding */}
+          {/* AI summary */}
           <div className={`${card} flex flex-col p-6 ${lift}`}>
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl text-white" style={{ background: `linear-gradient(135deg, ${accent}, ${accentDark})` }}><Palette className="h-5 w-5" /></div>
-              <h3 className="font-bold">Custom Branding</h3>
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl text-white" style={{ background: `linear-gradient(135deg, ${accent}, ${accentDark})` }}><Sparkles className="h-5 w-5" /></div>
+              <h3 className="font-bold">AI Summary</h3>
             </div>
-            <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">Make it yours: an admin sets the app name, tagline, logo and accent color, and the whole app follows.</p>
-            <div className="mt-4 space-y-3 border-t border-gray-100 pt-4 dark:border-gray-800">
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-gray-500 dark:text-gray-400">App name</span>
-                <span className={`font-semibold ${hd}`}>{branding.appName}</span>
+            <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">Every report opens with a short, plain-English read on where storage stands.</p>
+            <div className="mt-4 rounded-lg bg-gray-900 p-3 text-[11px] leading-relaxed text-gray-200">
+              <div className="mb-2 flex items-center justify-between text-[10px] uppercase tracking-wider text-gray-500">
+                <span>Sample summary</span>
+                <span className="flex items-center gap-1"><Sparkles className="h-3 w-3" /> AI</span>
               </div>
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-gray-500 dark:text-gray-400">Accent color</span>
-                <span className="flex items-center gap-2 font-mono text-gray-600 dark:text-gray-300"><span className="h-4 w-4 rounded-full ring-1 ring-black/10" style={{ backgroundColor: accent }} />{accent.toUpperCase()}</span>
-              </div>
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-gray-500 dark:text-gray-400">Logo &amp; tagline</span>
-                <span className="text-gray-600 dark:text-gray-300">Upload your own</span>
+              <div className="space-y-1.5">
+                <div className="flex gap-2"><span style={{ color: lighten(accent, 0.45) }}>&#9656;</span><span>IBM is 72% full, comfortably within capacity.</span></div>
+                <div className="flex gap-2"><span style={{ color: lighten(accent, 0.45) }}>&#9656;</span><span>FS5K is 58% full, with plenty of room to grow.</span></div>
+                <div className="flex gap-2"><span style={{ color: lighten(accent, 0.45) }}>&#9656;</span><span>No volume is close to its limit this month.</span></div>
               </div>
             </div>
-            <button onClick={onGetStarted} className={`mt-auto inline-flex items-center gap-1 pt-4 text-sm font-semibold ${ac}`}>Sign in to customize <ArrowRight className="h-3.5 w-3.5" /></button>
+            <button onClick={onGetStarted} className={`mt-auto inline-flex items-center gap-1 pt-4 text-sm font-semibold ${ac}`}>Sign in to see yours <ArrowRight className="h-3.5 w-3.5" /></button>
           </div>
         </div>
       </section>
@@ -578,7 +575,7 @@ function Landing({ onGetStarted, branding }: { onGetStarted: () => void; brandin
           <div className="flex items-center gap-2 font-semibold text-gray-600 dark:text-gray-300">
             <NavLogo size={16} /> {branding.appName}{branding.tagline ? ` — ${branding.tagline}` : ""}
           </div>
-          <div>Internal MAMS infrastructure &middot; Storage &middot; Reporting &middot; Automation &middot; Branding</div>
+          <div>Internal MAMS infrastructure &middot; Storage &middot; Reporting &middot; Automation</div>
         </div>
       </footer>
     </div>
