@@ -197,7 +197,7 @@ function Landing({ onGetStarted, branding }: { onGetStarted: () => void; brandin
     { icon: Folder, title: "Folder-Level Visibility", description: "Drill down from total capacity to the folders using the most space." },
     { icon: Shield, title: "Role-Based Access", description: "Imports and data management stay admin-only." },
     { icon: BarChart3, title: "AI-Powered Summary", description: "Storage numbers turned into a short plain-English summary." },
-    { icon: Palette, title: "Custom Branding", description: "Your own app name, logo and colors, set by an admin." },
+    { icon: AlertTriangle, title: "Stale-Data Safeguard", description: "Reports are held back, not sent, if the data is out of date." },
   ];
 
   const stats = [
