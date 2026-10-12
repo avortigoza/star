@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Download, Moon, Sun, Laptop, Trash2, Upload, LogOut, Sparkles, Settings, Eye, EyeOff, Star, MoreVertical, Check, Database, BarChart3, ArrowRight, Folder, FileText, Cloud, Shield, X, Zap, Code2, CheckCircle2, LayoutDashboard, AlertTriangle, Cpu, Mail } from "lucide-react";
+import { Download, Moon, Sun, Laptop, Trash2, Upload, LogOut, Sparkles, Settings, Eye, EyeOff, Star, MoreVertical, Check, Database, BarChart3, ArrowRight, Folder, FileText, Cloud, Shield, X, Zap, CheckCircle2, LayoutDashboard, AlertTriangle, Cpu, Mail } from "lucide-react";
 import Papa from "papaparse";
 import * as XLSX from "xlsx";
 
@@ -241,7 +241,6 @@ function Landing({ onGetStarted, branding }: { onGetStarted: () => void; brandin
     { icon: Folder, title: "Folder-Level Visibility", description: "Drill down from total capacity to the folders using the most space." },
     { icon: Shield, title: "Role-Based Access", description: "Imports and data management stay admin-only." },
     { icon: BarChart3, title: "AI-Powered Summary", description: "Storage numbers turned into a short plain-English summary." },
-    { icon: Cloud, title: "Open Read-Only API", description: "Share usage and reports with other internal tools." },
   ];
 
   const stats = [
@@ -330,7 +329,6 @@ function Landing({ onGetStarted, branding }: { onGetStarted: () => void; brandin
               </a>
               <a href="#features" onClick={scrollTo("features")} className={navLink}>Features</a>
               <a href="#reports" onClick={scrollTo("reports")} className={navLink}>Reports</a>
-              <a href="#api" onClick={scrollTo("api")} className={navLink}>API</a>
             </div>
           </div>
         </div>
@@ -361,9 +359,6 @@ function Landing({ onGetStarted, branding }: { onGetStarted: () => void; brandin
               <button onClick={onGetStarted} className="inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold text-white shadow-md transition hover:brightness-110 active:scale-[.98]" style={{ backgroundColor: accent }}>
                 Sign In <ArrowRight className="h-4 w-4" />
               </button>
-              <a href="/api/v1/docs" className="inline-flex items-center gap-2 rounded-full border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800">
-                <Code2 className="h-5 w-5" /> API Docs
-              </a>
             </div>
             <ul className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-sm font-medium text-gray-600 dark:text-gray-400">
               {checks.map((c) => (
@@ -469,7 +464,7 @@ function Landing({ onGetStarted, branding }: { onGetStarted: () => void; brandin
         <div className="relative mx-auto max-w-[1800px] px-6 py-20 lg:px-12">
           <h2 className={`text-center text-4xl font-extrabold tracking-tight ${gradText}`}>Why Choose {branding.appName}?</h2>
           <p className="mt-3 text-center text-gray-500 dark:text-gray-400">Everything you need to keep storage under control.</p>
-          <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-5">
+          <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {whyItems.map((w, i) => (
               <div key={w.title} className={`group relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-6 text-center shadow-sm dark:border-gray-800 dark:bg-gray-900 ${lift}`}>
                 <div aria-hidden className="absolute inset-x-0 top-0 h-1 opacity-0 transition group-hover:opacity-100" style={{ background: `linear-gradient(to right, ${accent}, ${accentDark})` }} />
@@ -495,7 +490,7 @@ function Landing({ onGetStarted, branding }: { onGetStarted: () => void; brandin
           </p>
         </div>
 
-        <div className="grid gap-5 md:grid-cols-3">
+        <div className="grid gap-5 md:grid-cols-2">
           {/* Storage monitoring */}
           <div className={`${card} flex flex-col p-6 ${lift}`}>
             <div className="flex items-center gap-3">
@@ -543,28 +538,6 @@ function Landing({ onGetStarted, branding }: { onGetStarted: () => void; brandin
               )}
             </div>
             <button onClick={onGetStarted} className={`mt-auto inline-flex items-center gap-1 pt-4 text-sm font-semibold ${ac}`}>View all reports <ArrowRight className="h-3.5 w-3.5" /></button>
-          </div>
-
-          {/* Public API */}
-          <div id="api" className={`${card} flex scroll-mt-20 flex-col p-6 ${lift}`}>
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl text-white" style={{ background: `linear-gradient(135deg, ${accent}, ${accentDark})` }}><Code2 className="h-5 w-5" /></div>
-              <h3 className="font-bold">Public API</h3>
-            </div>
-            <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">Read-only endpoints so other internal tools can use the same numbers.</p>
-            <pre className="mt-4 overflow-x-auto rounded-lg bg-gray-900 p-3 text-[11px] leading-relaxed text-green-300">
-{`GET /api/v1/usage
-
-{
-  "ibm": {
-    "percentFull": ${volumes[0].has ? volumes[0].pct.toFixed(1) : "…"}
-  },
-  "comp": {
-    "percentFull": ${volumes[1].has ? volumes[1].pct.toFixed(1) : "…"}
-  }
-}`}
-            </pre>
-            <a href="/api/v1/docs" className={`mt-auto inline-flex items-center gap-1 pt-4 text-sm font-semibold ${ac}`}>Explore API docs <ArrowRight className="h-3.5 w-3.5" /></a>
           </div>
         </div>
       </section>
@@ -636,7 +609,7 @@ function Landing({ onGetStarted, branding }: { onGetStarted: () => void; brandin
           <div className="flex items-center gap-2 font-semibold text-gray-600 dark:text-gray-300">
             <NavLogo size={16} /> {branding.appName}{branding.tagline ? ` — ${branding.tagline}` : ""}
           </div>
-          <div>Internal MAMS infrastructure &middot; Storage &middot; Reporting &middot; Automation &middot; API</div>
+          <div>Internal MAMS infrastructure &middot; Storage &middot; Reporting &middot; Automation</div>
         </div>
       </footer>
     </div>
