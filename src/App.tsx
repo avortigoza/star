@@ -504,6 +504,7 @@ function Landing({ onGetStarted, branding }: { onGetStarted: () => void; brandin
                 </div>
               ))}
             </div>
+            <a href="#automation" onClick={scrollTo("automation")} className={`mt-auto inline-flex items-center gap-1 pt-4 text-sm font-semibold ${ac}`}>See how it works <ArrowRight className="h-3.5 w-3.5" /></a>
           </div>
         </div>
       </section>
