@@ -40,13 +40,12 @@ function Login({ onLogin, branding, asModal, onClose }: { onLogin: (username: st
     setLoading(true);
 
     try {
-      if (username === "postmams" && password === "gma7mams") {
-        onLogin(username, "admin");
-        return;
-      }
-
+      // Every login (admin included) goes through the server so it can start a
+      // session; the old client-side admin shortcut skipped that and also
+      // shipped the admin password inside the page's JavaScript.
       const response = await fetch('/api/users/check', {
         method: 'POST',
+        credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password })
       });
@@ -129,10 +128,9 @@ function Login({ onLogin, branding, asModal, onClose }: { onLogin: (username: st
 // Shown first when hitting the app's root URL, before the login form -
 // onGetStarted just flips a piece of local state in the parent (no
 // router in this app) that opens the Login modal on top of this page.
-// Fetches from the public, no-auth /api/v1 endpoints so the hero mockup,
-// stats and report list show genuinely live data rather than placeholder
-// numbers. There is no usage history stored anywhere, so nothing here
-// draws a trend line - the mockup shows used vs. free capacity instead.
+// This page is public, so it shows NO live data: the mockup uses clearly
+// labelled sample figures. Real capacity, folder data and reports are only
+// available after signing in (the /api/v1 endpoints require a session too).
 type LandingBranding = { appName: string; accentColor: string; tagline: string; logoDataUrl: string | null; logoIncludesText: boolean; appNameImageDataUrl: string | null; taglineImageDataUrl: string | null };
 
 // Uploaded logo / tagline images often carry transparent padding, which
@@ -172,14 +170,6 @@ function TrimmedImg({ src, alt, className }: { src: string; alt: string; classNa
 }
 
 function Landing({ onGetStarted, branding }: { onGetStarted: () => void; branding: LandingBranding }) {
-  const [usage, setUsage] = useState<{ ibm?: any; comp?: any } | null>(null);
-  const [reports, setReports] = useState<any[] | null>(null);
-
-  useEffect(() => {
-    fetch("/api/v1/usage").then((r) => (r.ok ? r.json() : null)).then(setUsage).catch(() => setUsage(null));
-    fetch("/api/v1/reports").then((r) => (r.ok ? r.json() : [])).then((list) => setReports(Array.isArray(list) ? list : [])).catch(() => setReports([]));
-  }, []);
-
   const accent = branding.accentColor;
   const accentDark = darkenHex(accent, 0.35);
   const lighten = (hex: string, amt: number) => {
@@ -196,45 +186,11 @@ function Landing({ onGetStarted, branding }: { onGetStarted: () => void; brandin
   const scrollTo = (id: string) => (e: React.MouseEvent) => { e.preventDefault(); document.getElementById(id)?.scrollIntoView({ behavior: "smooth" }); };
   const fmt = (n: number) => Math.round(n).toLocaleString();
 
-  // Volumes shown in the mockup. Internal key "comp" is the FS5K volume.
+  // Sample volumes for the mockup only - not real figures.
   const volumes = [
-    { key: "ibm", label: "IBM" },
-    { key: "comp", label: "FS5K" },
-  ].map(({ key, label }) => {
-    const v = (usage as any)?.[key];
-    const has = !!v && Number.isFinite(Number(v.percentFull)) && (Number(v.usedTB) > 0 || !!v.updatedAt);
-    const used = has ? Number(v.usedTB) || 0 : 0;
-    const cap = has ? Number(v.capacityTB) || 0 : 0;
-    return { key, label, has, pct: has ? Number(v.percentFull) : 0, used, cap, free: Math.max(cap - used, 0), updatedAt: has ? v.updatedAt : null };
-  });
-  const haveData = volumes.some((v) => v.has && v.used > 0);
-  const totalCap = volumes.reduce((s, v) => s + v.cap, 0);
-
-  // Honest status for the floating card: derived from the live numbers,
-  // never a hardcoded "all good".
-  const STALE_HOURS = 48;
-  const ages = volumes.map((v) => (v.updatedAt ? (Date.now() - Date.parse(v.updatedAt)) / 36e5 : NaN)).filter((n) => Number.isFinite(n));
-  const stale = haveData && (ages.length < volumes.filter((v) => v.has).length || ages.some((a) => a > STALE_HOURS));
-  const hot = volumes.filter((v) => v.has && v.pct >= 90);
-  type Health = { tone: "ok" | "warn" | "idle"; title: string; body: string };
-  const health: Health = !haveData
-    ? { tone: "idle", title: "Waiting for data", body: "Usage appears after the first import." }
-    : hot.length
-      ? { tone: "warn", title: "Capacity Warning", body: `${hot.map((v) => `${v.label} is ${v.pct.toFixed(1)}%`).join(" and ")} full.` }
-      : stale
-        ? { tone: "warn", title: "Data Not Refreshed", body: "Usage numbers haven't been updated in over 2 days." }
-        : { tone: "ok", title: "System Healthy", body: "Both volumes are within capacity and data is current." };
-  const toneStyle = {
-    ok: { bg: "bg-green-100 dark:bg-green-900/40", fg: "text-green-600 dark:text-green-400" },
-    warn: { bg: "bg-amber-100 dark:bg-amber-900/40", fg: "text-amber-600 dark:text-amber-400" },
-    idle: { bg: "bg-gray-100 dark:bg-gray-800", fg: "text-gray-500 dark:text-gray-400" },
-  }[health.tone];
-
-  const updatedStamp = (() => {
-    const ts = volumes.map((v) => Date.parse(v.updatedAt || "")).filter((n) => Number.isFinite(n));
-    if (!ts.length) return null;
-    return new Date(Math.max(...ts)).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
-  })();
+    { key: "ibm", label: "IBM", pct: 72 },
+    { key: "comp", label: "FS5K", pct: 58 },
+  ];
 
   const whyItems = [
     { icon: Zap, title: "Daily Usage Refresh", description: "Capacity numbers are pulled in automatically every morning." },
@@ -246,19 +202,18 @@ function Landing({ onGetStarted, branding }: { onGetStarted: () => void; brandin
   const stats = [
     { value: "Daily", label: "Usage refresh" },
     { value: "Month-end", label: "Automated report & email" },
-    { value: reports === null ? "—" : String(reports.length), label: "Reports archived" },
-    { value: totalCap ? `${fmt(totalCap)} TB` : "—", label: "Capacity tracked" },
+    { value: "2", label: "Storage volumes monitored" },
+    { value: "Excel + AI", label: "Report with summary" },
   ];
 
-  const totalUsed = volumes.reduce((s, v) => s + v.used, 0);
   const heroStats = [
-    { icon: Database, value: totalCap ? `${fmt(totalCap)} TB` : "—", label: "Total capacity tracked" },
-    { icon: BarChart3, value: haveData ? `${fmt(totalUsed)} TB` : "—", label: haveData && totalCap ? `In use · ${((totalUsed / totalCap) * 100).toFixed(1)}% of capacity` : "In use" },
-    { icon: Cloud, value: haveData ? `${fmt(Math.max(totalCap - totalUsed, 0))} TB` : "—", label: "Free across both volumes" },
     { icon: Zap, value: "Daily", label: "Automatic usage refresh" },
+    { icon: Database, value: "2 volumes", label: "IBM and FS5K monitored" },
+    { icon: Sparkles, value: "AI summary", label: "Plain-English highlights" },
+    { icon: Mail, value: "Month-end", label: "Report emailed automatically" },
   ];
 
-  const checks = ["Live capacity", "Monthly reports", "Role-based access"];
+  const checks = ["Daily capacity checks", "Monthly reports", "Role-based access"];
 
   const NavLogo = ({ size = 28 }: { size?: number }) => (
     branding.logoDataUrl && !branding.logoIncludesText ? (
@@ -384,20 +339,16 @@ function Landing({ onGetStarted, branding }: { onGetStarted: () => void; brandin
               <div className="min-w-0 flex-1 p-5">
                 <div className="mb-3 flex items-center justify-between text-xs">
                   <span className="text-sm font-bold">Storage Overview</span>
-                  {haveData ? (
-                    <span className="flex items-center gap-1.5 text-gray-500 dark:text-gray-400"><span className="h-2 w-2 rounded-full bg-green-500" /> Live</span>
-                  ) : (
-                    <span className="text-gray-400">{usage ? "No data" : "Loading…"}</span>
-                  )}
+                  <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-medium text-gray-500 dark:bg-gray-800 dark:text-gray-400">Sample view</span>
                 </div>
                 <div className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2">
                   {volumes.map((v) => (
                     <div key={v.key} className="flex items-center gap-3 rounded-xl border border-gray-200 bg-gradient-to-br from-white to-gray-50 p-3 dark:border-gray-800 dark:from-gray-900 dark:to-gray-900/40">
-                      <Ring pct={v.pct} has={v.has} />
+                      <Ring pct={v.pct} has={true} />
                       <div className="min-w-0">
                         <div className="text-[11px] font-semibold text-gray-500 dark:text-gray-400">{v.label}</div>
-                        <div className="text-xl font-bold leading-tight">{v.has ? `${v.pct.toFixed(1)}%` : "—"}</div>
-                        <div className="mt-0.5 text-[10px] text-gray-400">{v.has ? `${fmt(v.used)} / ${fmt(v.cap)} TB` : "no data yet"}</div>
+                        <div className="text-xl font-bold leading-tight">{v.pct.toFixed(1)}%</div>
+                        <div className="mt-0.5 text-[10px] text-gray-400">Sample data</div>
                       </div>
                     </div>
                   ))}
@@ -415,7 +366,7 @@ function Landing({ onGetStarted, branding }: { onGetStarted: () => void; brandin
                       <div key={v.key}>
                         <div className="mb-1 flex justify-between text-[10px] text-gray-500 dark:text-gray-400">
                           <span className="font-semibold">{v.label}</span>
-                          <span>{v.has ? `${fmt(v.free)} TB free` : "—"}</span>
+                          <span>{(100 - v.pct).toFixed(0)}% free</span>
                         </div>
                         <div className="flex h-3 w-full overflow-hidden rounded-md bg-gray-200 dark:bg-gray-700">
                           <div className="h-full" style={{ width: `${Math.min(v.pct, 100)}%`, backgroundColor: accent }} />
@@ -423,20 +374,20 @@ function Landing({ onGetStarted, branding }: { onGetStarted: () => void; brandin
                       </div>
                     ))}
                   </div>
-                  <div className="mt-3 text-[10px] text-gray-400">{updatedStamp ? `Last updated ${updatedStamp}` : "Not updated yet"}</div>
+                  <div className="mt-3 text-[10px] text-gray-400">Sample data - sign in to see live figures</div>
                 </div>
               </div>
             </div>
 
             {/* Floating status card */}
             <div className={`${card} relative z-10 mt-4 flex w-full items-start gap-3 p-4 shadow-xl sm:w-64 lg:absolute lg:-bottom-20 lg:-right-2 lg:mt-0`}>
-              <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${toneStyle.bg}`}>
-                {health.tone === "warn" ? <AlertTriangle className={`h-5 w-5 ${toneStyle.fg}`} /> : <Check className={`h-5 w-5 ${toneStyle.fg}`} />}
+              <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-green-100 dark:bg-green-900/40`}>
+                <Check className="h-5 w-5 text-green-600 dark:text-green-400" />
               </div>
               <div className="min-w-0">
-                <div className="text-sm font-bold">{health.title}</div>
-                <div className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">{health.body}</div>
-                <button onClick={onGetStarted} className={`mt-2 inline-flex items-center gap-1 text-xs font-semibold ${ac}`}>View details <ArrowRight className="h-3 w-3" /></button>
+                <div className="text-sm font-bold">Always up to date</div>
+                <div className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">Capacity refreshes automatically every morning.</div>
+                <button onClick={onGetStarted} className={`mt-2 inline-flex items-center gap-1 text-xs font-semibold ${ac}`}>Sign in for live status <ArrowRight className="h-3 w-3" /></button>
               </div>
             </div>
           </div>
@@ -503,7 +454,7 @@ function Landing({ onGetStarted, branding }: { onGetStarted: () => void; brandin
                 <div key={v.key}>
                   <div className="mb-1 flex justify-between text-xs">
                     <span className="font-semibold">{v.label}</span>
-                    <span className="text-gray-500 dark:text-gray-400">{v.has ? `${v.pct.toFixed(1)}%` : "—"}</span>
+                    <span className="text-gray-500 dark:text-gray-400">{v.pct.toFixed(1)}% (sample)</span>
                   </div>
                   <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
                     <div className="h-full rounded-full" style={{ width: `${Math.min(v.pct, 100)}%`, backgroundColor: accent }} />
@@ -522,22 +473,11 @@ function Landing({ onGetStarted, branding }: { onGetStarted: () => void; brandin
             </div>
             <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">A monthly Excel report with an AI summary, emailed automatically and archived here.</p>
             <div className="mt-4 space-y-2 border-t border-gray-100 pt-4 dark:border-gray-800">
-              {reports === null ? (
-                <p className="text-sm text-gray-400">Loading…</p>
-              ) : reports.length === 0 ? (
-                <p className="text-sm text-gray-400">No reports generated yet.</p>
-              ) : (
-                reports.slice(0, 4).map((r) => (
-                  <div key={r.filename} className="flex items-center justify-between text-xs">
-                    <span className="flex items-center gap-1.5 text-gray-600 dark:text-gray-300"><Check className={`h-3.5 w-3.5 ${ac}`} /> {r.date}</span>
-                    <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${r.source === "manual" ? "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300" : "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300"}`}>
-                      {r.source === "manual" ? "Manual" : "Automated"}
-                    </span>
-                  </div>
-                ))
-              )}
+              {["Excel report generated at month-end", "AI summary included", "Emailed to the team automatically", "Archived in Report History"].map((t) => (
+                <div key={t} className="flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-300"><Check className={`h-3.5 w-3.5 ${ac}`} /> {t}</div>
+              ))}
             </div>
-            <button onClick={onGetStarted} className={`mt-auto inline-flex items-center gap-1 pt-4 text-sm font-semibold ${ac}`}>View all reports <ArrowRight className="h-3.5 w-3.5" /></button>
+            <button onClick={onGetStarted} className={`mt-auto inline-flex items-center gap-1 pt-4 text-sm font-semibold ${ac}`}>Sign in to view reports <ArrowRight className="h-3.5 w-3.5" /></button>
           </div>
         </div>
       </section>
@@ -1331,6 +1271,7 @@ export default function App() {
     const resetTimer = () => {
       window.clearTimeout(timeout);
       timeout = window.setTimeout(() => {
+        fetch("/api/logout", { method: "POST", credentials: "same-origin" }).catch(() => {});
         localStorage.removeItem("isAuth");
         localStorage.removeItem("currentUser");
         localStorage.removeItem("userRole");
@@ -1652,6 +1593,7 @@ const onChangeUsageDell = async (val: string) => {
   };
 
   const handleLogout = () => {
+    fetch("/api/logout", { method: "POST", credentials: "same-origin" }).catch(() => {});
     localStorage.removeItem("isAuth");
     localStorage.removeItem("currentUser");
     localStorage.removeItem("userRole");

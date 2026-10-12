@@ -29,8 +29,8 @@ unattended — see [Automation](#automation) below.
 - **User accounts** with admin/user roles; admin-gated actions (import,
   clear data, settings, user management)
 - **Light/dark/system theme**
-- **Public read-only REST API** (`/api/v1`) with interactive Swagger docs
-  for other tools to build against
+- **Read-only REST API** (`/api/v1`, sign-in required) with interactive
+  Swagger docs for other tools to build against
 
 ## Tech Stack
 
@@ -168,18 +168,25 @@ directly. This is **not** a stable contract — it can change shape or grow
 new write endpoints without notice. Don't build external tooling against
 it; use the public API below instead.
 
-### Public API (`/api/v1`)
+### Read-only API (`/api/v1`)
 
 A small, deliberately stable, **read-only** API meant for other tools to
-build against:
+build against. **It requires a signed-in session**: anonymous requests get
+`401 {"error":"Sign in required."}`, including the docs and the raw spec.
+A tool signs in with `POST /api/users/check` (JSON `username` + `password`)
+and re-sends the returned `star_session` cookie, e.g.
+`curl -c jar -H "Content-Type: application/json" -d '{"username":"...","password":"..."}' http://HOST/api/users/check`
+then `curl -b jar http://HOST/api/v1/usage`. Sessions last 8 hours and are
+kept in memory (a container restart signs everyone out).
 
 - `GET /api/v1/usage` — usage/capacity summary for both volumes
 - `GET /api/v1/rows` / `GET /api/v1/rows/:side` — per-folder storage rows
 - `GET /api/v1/reports` — list of every generated report
 - `GET /api/v1/reports/:filename/download` — download one report
 
-**Interactive documentation:** `GET /api/v1/docs` (Swagger UI — browse
-every endpoint and try real requests from the browser)
+**Interactive documentation:** `GET /api/v1/docs` (Swagger UI — sign in to
+STAR in the same browser first, then browse every endpoint and try real
+requests)
 **Raw spec:** `GET /api/v1/openapi.json`
 
 ## Known Limitations

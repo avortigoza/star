@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs').promises;
+const crypto = require('crypto');
 const swaggerUi = require('swagger-ui-express');
 const openApiSpec = require('./openapi');
 
@@ -18,6 +19,53 @@ app.use(cors());
 // that worst case (~8.4MB) plus the rest of the JSON payload.
 app.use(express.json({ limit: '10mb' }));
 app.use(express.static(path.join(__dirname, 'dist')));
+
+// ============ SESSIONS ============
+// A successful POST /api/users/check starts a server-side session and sets an
+// HttpOnly cookie. Today it only guards /api/v1 (the read-only API and its
+// docs), which no longer answers anonymous requests. Sessions live in memory,
+// so a container restart signs everyone out - they simply log in again.
+const SESSION_COOKIE = 'star_session';
+const SESSION_TTL_MS = 8 * 60 * 60 * 1000;
+const sessions = new Map();
+
+function readCookie(req, name) {
+  const header = req.headers.cookie || '';
+  for (const part of header.split(';')) {
+    const i = part.indexOf('=');
+    if (i > 0 && part.slice(0, i).trim() === name) return decodeURIComponent(part.slice(i + 1).trim());
+  }
+  return null;
+}
+
+function startSession(res, username, role) {
+  const token = crypto.randomBytes(32).toString('hex');
+  sessions.set(token, { username, role, expires: Date.now() + SESSION_TTL_MS });
+  res.setHeader('Set-Cookie', `${SESSION_COOKIE}=${token}; HttpOnly; SameSite=Lax; Path=/; Max-Age=${SESSION_TTL_MS / 1000}`);
+}
+
+function currentSession(req) {
+  const token = readCookie(req, SESSION_COOKIE);
+  if (!token) return null;
+  const s = sessions.get(token);
+  if (!s) return null;
+  if (s.expires < Date.now()) { sessions.delete(token); return null; }
+  return s;
+}
+
+function requireSession(req, res, next) {
+  if (currentSession(req)) return next();
+  res.setHeader('Cache-Control', 'no-store');
+  if (req.accepts(['json', 'html']) === 'html') {
+    return res.status(401).send('<!doctype html><meta charset="utf-8"><title>Sign in required</title><body style="font-family:system-ui;margin:3rem"><h2>Sign in required</h2><p>Sign in to STAR first, then reload this page. (<a href="/">Go to STAR</a>)</p></body>');
+  }
+  res.status(401).json({ error: 'Sign in required.' });
+}
+
+setInterval(() => {
+  const now = Date.now();
+  for (const [t, s] of sessions) if (s.expires < now) sessions.delete(t);
+}, 10 * 60 * 1000).unref();
 
 const DATA_DIR = path.join(__dirname, 'data');
 const USERS_FILE = path.join(DATA_DIR, 'users.json');
@@ -209,6 +257,7 @@ app.post('/api/users/check', async (req, res) => {
   }
   try {
     if (username === "postmams" && password === "gma7mams") {
+      startSession(res, "postmams", "admin");
       return res.json({ valid: true, role: "admin", username: "postmams" });
     }
     const data = JSON.parse(await fs.readFile(USERS_FILE, 'utf8'));
@@ -219,10 +268,18 @@ app.post('/api/users/check', async (req, res) => {
     if (user.password !== password) {
       return res.status(401).json({ valid: false, error: "Invalid password." });
     }
+    startSession(res, user.username, user.role);
     res.json({ valid: true, role: user.role, username: user.username });
   } catch (err) {
     res.status(500).json({ error: "Login check failed." });
   }
+});
+
+app.post('/api/logout', (req, res) => {
+  const token = readCookie(req, SESSION_COOKIE);
+  if (token) sessions.delete(token);
+  res.setHeader('Set-Cookie', `${SESSION_COOKIE}=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0`);
+  res.json({ message: 'Signed out.' });
 });
 
 // ============ ROWS API ============
@@ -592,6 +649,9 @@ const CAP_DELL = 440;
 // Interactive Swagger UI + raw OpenAPI spec for the /api/v1 contract above -
 // mounted before the /api/v1 routes themselves purely for readability
 // (registration order doesn't matter here, these paths don't overlap).
+// Everything under /api/v1 (including the docs and the raw spec) needs a
+// signed-in session - see the SESSIONS block near the top.
+app.use('/api/v1', requireSession);
 app.use('/api/v1/docs', swaggerUi.serve, swaggerUi.setup(openApiSpec));
 app.get('/api/v1/openapi.json', (req, res) => res.json(openApiSpec));
 
