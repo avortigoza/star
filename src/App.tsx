@@ -188,8 +188,8 @@ function Landing({ onGetStarted, branding }: { onGetStarted: () => void; brandin
 
   // Sample volumes for the mockup only - not real figures.
   const volumes = [
-    { key: "ibm", label: "IBM", pct: 72 },
-    { key: "comp", label: "FS5K", pct: 58 },
+    { key: "ibm", label: "Volume A", pct: 72 },
+    { key: "comp", label: "Volume B", pct: 58 },
   ];
 
   const whyItems = [
@@ -209,7 +209,7 @@ function Landing({ onGetStarted, branding }: { onGetStarted: () => void; brandin
 
   const heroStats = [
     { icon: Zap, value: "Daily", label: "Automatic usage refresh" },
-    { icon: Database, value: "2 volumes", label: "IBM and FS5K monitored" },
+    { icon: Database, value: "2 volumes", label: "Capacity tracked per volume" },
     { icon: Sparkles, value: "AI summary", label: "Plain-English highlights" },
     { icon: Mail, value: "Month-end", label: "Report emailed automatically" },
   ];
