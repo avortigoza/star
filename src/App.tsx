@@ -1291,6 +1291,31 @@ export default function App() {
     return () => document.removeEventListener("mousedown", onClickOutside);
   }, [showMoreMenu]);
 
+  // ===== Keep the saved login in step with the server session =====
+  // The browser remembers "signed in", but the server's session can be gone
+  // (restart/rebuild, 8h expiry). If so, send the user back to the login screen
+  // instead of leaving a dashboard whose API Docs / API calls get refused.
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    const verify = () => {
+      fetch("/api/session", { credentials: "same-origin", cache: "no-store" })
+        .then((r) => {
+          if (r.status === 401) {
+            localStorage.removeItem("isAuth");
+            localStorage.removeItem("currentUser");
+            localStorage.removeItem("userRole");
+            setIsAuthenticated(false);
+            setCurrentUser("postmams");
+            setUserRole("user");
+          }
+        })
+        .catch(() => {});
+    };
+    verify();
+    window.addEventListener("focus", verify);
+    return () => window.removeEventListener("focus", verify);
+  }, [isAuthenticated]);
+
   // ===== Auto Logout =====
   useEffect(() => {
     if (!isAuthenticated) return;

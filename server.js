@@ -275,6 +275,15 @@ app.post('/api/users/check', async (req, res) => {
   }
 });
 
+// Lets the frontend confirm its saved login still matches a live server session
+// (sessions live in memory, so a restart/rebuild or the 8h expiry ends them).
+app.get('/api/session', (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  const sess = currentSession(req);
+  if (!sess) return res.status(401).json({ error: 'No active session.' });
+  res.json({ username: sess.username, role: sess.role });
+});
+
 app.post('/api/logout', (req, res) => {
   const token = readCookie(req, SESSION_COOKIE);
   if (token) sessions.delete(token);
