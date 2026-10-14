@@ -184,9 +184,9 @@ kept in memory (a container restart signs everyone out).
 - `GET /api/v1/reports` — list of every generated report
 - `GET /api/v1/reports/:filename/download` — download one report
 
-**Interactive documentation:** `GET /api/v1/docs` (Swagger UI — sign in to
-STAR in the same browser first, then browse every endpoint and try real
-requests)
+**Interactive documentation:** open the **⋮ menu → API Docs** in STAR, or go to
+`GET /api/v1/docs` (Swagger UI — sign in to STAR in the same browser first,
+then browse every endpoint and try real requests)
 **Raw spec:** `GET /api/v1/openapi.json`
 
 ## Known Limitations
