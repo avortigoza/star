@@ -1822,6 +1822,9 @@ RULES:
                       <button type="button" onClick={() => { setShowMoreMenu(false); if (userRole === "admin") setShowSettings(true); else notify("Only admins can access settings.", "err"); }} className="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-800">
                         <Settings className="h-4 w-4" /> Settings
                       </button>
+                      <a href="/api/v1/docs" target="_blank" rel="noopener noreferrer" onClick={() => setShowMoreMenu(false)} className="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-800">
+                        <FileText className="h-4 w-4" /> API Docs
+                      </a>
                       <button type="button" onClick={() => { setShowMoreMenu(false); if (userRole === "admin") clearData(); else notify("Only admins can clear data.", "err"); }} className="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-800">
                         <Trash2 className="h-4 w-4" /> Clear
                       </button>
